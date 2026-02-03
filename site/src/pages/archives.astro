@@ -1,0 +1,113 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { site } from "../config/site";
+
+const posts = await getCollection("posts", ({ data }) => !data.draft);
+const countChineseChars = (value: string) => {
+  const matches = value.match(/[\u4e00-\u9fa5]/g);
+  return matches ? matches.length : value.replace(/\s+/g, "").length;
+};
+
+const totalChars = posts.reduce((sum, post) => sum + countChineseChars(post.body), 0);
+const totalPosts = posts.length;
+
+const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags ?? []))).sort((a, b) =>
+  a.localeCompare(b, "zh")
+);
+
+const archiveMap = new Map();
+posts
+  .slice()
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .forEach((post) => {
+    const date = post.data.date;
+    const year = date.getFullYear().toString();
+    const monthDay = date.toISOString().slice(5, 10);
+    if (!archiveMap.has(year)) archiveMap.set(year, []);
+    archiveMap.get(year).push({
+      monthDay,
+      title: post.data.title,
+      slug: post.slug
+    });
+  });
+
+const years = Array.from(archiveMap.keys()).sort((a, b) => Number(b) - Number(a));
+
+const formatChars = (value: number) => {
+  if (value >= 10000) return `${(value / 10000).toFixed(2)} w`;
+  if (value >= 1000) return `${(value / 1000).toFixed(2)} k`;
+  return `${value}`;
+};
+---
+<BaseLayout pageType="page" navCurrent="/archives" title="归档">
+  <div class="wrapper">
+    <article class="post post--text post--index main-item">
+      <div class="post-inner">
+        <header class="post-item post-header">
+          <div class="wrapper post-wrapper">
+            <div class="avatar post-author">
+              <img src={site.author.avatar} alt="作者头像" class="avatar-item avatar-img" loading="lazy" decoding="async" />
+              <span class="avatar-item">{site.author.name}</span>
+            </div>
+          </div>
+        </header>
+
+        <section class="post-item post-body">
+          <div class="wrapper post-wrapper">
+            <h1 class="post-title">
+              <a href="/archives" title="归档">归档</a>
+            </h1>
+            <div class="inner-post-wrapper">
+              <div class="meta post-meta">
+                这里会归档一切文章<br />
+                共创作了 {totalPosts} 篇文章，合 {formatChars(totalChars)} 字
+              </div>
+
+              <h2> 标签 </h2>
+              <section class="section-body">
+                <div class="cloud-container">
+                  {tags.length ? (
+                    tags.map((tag) => (
+                      <a href={`/tags/${encodeURIComponent(tag.toLowerCase())}/`} class="cloud-item">
+                        {tag}
+                      </a>
+                    ))
+                  ) : (
+                    <p>没有任何标签</p>
+                  )}
+                </div>
+              </section>
+
+              <h2>时间线</h2>
+              {years.map((year) => (
+                <>
+                  <h3 class="timeline-year">{year}</h3>
+                  <div id="timeline">
+                    {archiveMap.get(year).map((item) => (
+                      <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                          <div class="timeline-date">{item.monthDay}</div>
+                          <div class="timeline-title">
+                            <a href={`/posts/${item.slug}/`}>{item.title}</a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    </article>
+  </div>
+
+  <nav class="nav main-pager" role="navigation" aria-label="Pagination" data-js="pager">
+    <div class="nav main-lastinfo">
+      <span class="nav-item-alt" set:html={site.footerInfo} />
+    </div>
+  </nav>
+</BaseLayout>

@@ -1,0 +1,21 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+<BaseLayout pageType="page" navCurrent="/" title="404">
+  <div class="wrapper">
+    <article class="post post--text post--index main-item">
+      <div class="post-inner">
+        <section class="post-item post-body" style="margin-top: 0px;">
+          <div class="wrapper post-wrapper">
+            <p style="text-align: center;">页面不存在，正在返回首页…</p>
+          </div>
+        </section>
+      </div>
+    </article>
+  </div>
+  <script>
+    setTimeout(function () {
+      window.location.href = "/";
+    }, 1200);
+  </script>
+</BaseLayout>

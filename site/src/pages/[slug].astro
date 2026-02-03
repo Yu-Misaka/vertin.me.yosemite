@@ -1,0 +1,87 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { site } from "../config/site";
+import Comments from "../components/Comments.astro";
+
+export async function getStaticPaths() {
+  const pages = await getCollection("pages");
+  return pages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+
+const { page } = Astro.props;
+const { Content, headings } = await page.render();
+
+const hasImg = Boolean(page.data.cover);
+
+const buildTocHtml = (items: typeof headings) => {
+  if (!items?.length) return "";
+  const list = items
+    .map(
+      (item) =>
+        `<li class=\"toc-item toc-level-${item.depth}\"><a href=\"#${item.slug}\">${item.text}</a></li>`
+    )
+    .join("");
+  return `<ul>${list}</ul>`;
+};
+
+const tocHtml = buildTocHtml(headings);
+---
+<BaseLayout pageType="page" navCurrent={`/${page.slug}`} title={page.data.title} tocHtml={tocHtml}>
+  <div class="wrapper">
+    <article class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item`}>
+      <div class="post-inner">
+        <header class={`post-item post-header ${hasImg ? "no-bg" : ""}`}>
+          <div class="wrapper post-wrapper">
+            <div class="avatar post-author">
+              <img src={site.author.avatar} alt="作者头像" class="avatar-item avatar-img" />
+              <span class="avatar-item">{site.author.name}</span>
+            </div>
+          </div>
+        </header>
+
+        {hasImg ? (
+          <figure class="post-media">
+            <img itemprop="image" src={page.data.cover} alt="头图" loading="eager" decoding="async" />
+          </figure>
+        ) : null}
+
+        <section class="post-item post-body">
+          <div class="wrapper post-wrapper">
+            <h1 class="post-title">
+              <a href={`/${page.slug}/`} title={page.data.title}>
+                {page.data.title}
+              </a>
+            </h1>
+            <div class="inner-post-wrapper">
+              <div class="meta post-meta">
+                <a href={`/${page.slug}/`} class="icon-ui icon-ui-date meta-item meta-date">
+                  <span class="meta-count">{page.data.date ? page.data.date.toISOString().slice(0, 10) : ""}</span>
+                </a>
+                <a href={`/${page.slug}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
+                  暂无评论
+                </a>
+              </div>
+
+              <div class="post-content" data-pagefind-body>
+                <Content />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="post-item post-comments">
+          <div class="wrapper post-wrapper">
+            <Comments />
+          </div>
+        </section>
+      </div>
+    </article>
+  </div>
+
+  <nav class="nav main-pager" role="navigation" aria-label="Pagination" data-js="pager">
+    <div class="nav main-lastinfo">
+      <span class="nav-item-alt" set:html={site.footerInfo} />
+    </div>
+  </nav>
+</BaseLayout>

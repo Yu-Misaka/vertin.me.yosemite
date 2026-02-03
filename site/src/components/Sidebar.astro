@@ -1,0 +1,95 @@
+---
+import { getCollection } from "astro:content";
+import { site } from "../config/site";
+
+const posts = await getCollection("posts", ({ data }) => !data.draft);
+const toSlug = (value: string) => encodeURIComponent(value.trim().toLowerCase());
+
+const categories = Array.from(
+  new Set(posts.map((post) => post.data.category).filter(Boolean) as string[])
+)
+  .map((name) => ({ name, slug: toSlug(name) }))
+  .sort((a, b) => a.name.localeCompare(b.name, "zh"));
+
+const tags = Array.from(
+  new Set(posts.flatMap((post) => post.data.tags ?? []))
+)
+  .map((name) => ({ name, slug: toSlug(name) }))
+  .sort((a, b) => a.name.localeCompare(b.name, "zh"));
+
+const tocHtml = Astro.props.tocHtml ?? "";
+---
+<div class="right-sidebar" id="right-sidebar" data-pagefind-ignore>
+  {site.show.search ? (
+    <div class="search-section">
+      <header class="section-header">
+        <span class="icon-search"></span>
+        <span class="title">搜索</span>
+      </header>
+      <section class="section-body">
+        <form method="get" action="/search" class="search-container" role="search">
+          <input type="text" name="q" class="search-input" placeholder="输入关键字搜索" aria-label="输入关键字搜索">
+          <button type="submit" class="search-button" aria-label="搜索">
+            <span class="icon-search"></span>
+          </button>
+        </form>
+      </section>
+    </div>
+  ) : null}
+
+  {site.show.category ? (
+    <div class="cloud-section">
+      <header class="section-header">
+        <span class="icon-emo-wink"></span>
+        <span class="title">分类</span>
+      </header>
+      <section class="section-body">
+        <div class="cloud-container">
+          {categories.length ? (
+            categories.map((item) => (
+              <a href={`/categories/${item.slug}/`} class="cloud-item">
+                {item.name}
+              </a>
+            ))
+          ) : (
+            <p>没有任何分类</p>
+          )}
+        </div>
+      </section>
+    </div>
+  ) : null}
+
+  {site.show.tag ? (
+    <div class="cloud-section">
+      <header class="section-header">
+        <span class="icon-hashtag"></span>
+        <span class="title">标签</span>
+      </header>
+      <section class="section-body">
+        <div class="cloud-container">
+          {tags.length ? (
+            tags.slice(0, 20).map((item) => (
+              <a href={`/tags/${item.slug}/`} class="cloud-item">
+                {item.name}
+              </a>
+            ))
+          ) : (
+            <p>没有任何标签</p>
+          )}
+        </div>
+      </section>
+    </div>
+  ) : null}
+
+  {site.show.toc && tocHtml ? (
+    <div class="toc-section" id="toc-section">
+      <header class="section-header">
+        <span class="icon-article"></span>
+        <span class="title">文章目录</span>
+      </header>
+      <section class="section-body">
+        <div class="toc" set:html={tocHtml} />
+      </section>
+    </div>
+  ) : null}
+</div>

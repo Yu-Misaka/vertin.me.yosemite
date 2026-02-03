@@ -1,0 +1,158 @@
+---
+import { ViewTransitions } from "astro:transitions";
+import Header from "../components/Header.astro";
+import Sidebar from "../components/Sidebar.astro";
+import Footer from "../components/Footer.astro";
+import { site } from "../config/site";
+import { getThemeTokens } from "../config/theme";
+
+const title = Astro.props.title;
+const description = Astro.props.description ?? site.description;
+const pageType = Astro.props.pageType ?? "list";
+const navCurrent = Astro.props.navCurrent ?? "/";
+const tocHtml = Astro.props.tocHtml ?? "";
+
+const themeTokens = getThemeTokens(site.themeColor);
+const pageTitle = title ? `${title} - ${site.title}` : site.title;
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="renderer" content="webkit" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <slot name="head" />
+
+    <link rel="preconnect" href="https://cdn.academe.city" crossorigin />
+    <link rel="preconnect" href="https://mirrors.sustech.edu.cn" crossorigin />
+
+    <ViewTransitions />
+
+    <style>
+      {`
+        :root {
+          --themecolor: ${themeTokens.light.theme};
+          --themehovercolor: ${themeTokens.light.hover};
+        }
+        [data-theme="dark"] {
+          --themecolor: ${themeTokens.dark.theme};
+          --themehovercolor: ${themeTokens.dark.hover};
+        }
+      `}
+    </style>
+
+    <script>
+      window.THEME_URL = "";
+    </script>
+
+    <script>
+      (function () {
+        const cookieMatch = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/);
+        const cookieTheme = cookieMatch ? cookieMatch[1] : null;
+        const localTheme = localStorage.getItem("theme");
+        let initialTheme = cookieTheme || localTheme || "auto";
+        if (initialTheme === "auto") {
+          initialTheme = window.matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-theme", initialTheme);
+        try {
+          if (window.matchMedia && !window.matchMedia("(prefers-reduced-motion:reduce)").matches) {
+            document.documentElement.classList.add(
+              pageType === "post"
+                ? "ps-preload-post-enter"
+                : pageType === "page"
+                  ? "ps-preload-page-enter"
+                  : "ps-preload-list-enter"
+            );
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <link rel="preload" href="/css/PureSuck_Style.css" as="style" />
+    <link rel="stylesheet" href="/css/PureSuck_Style.css" />
+
+    <link rel="preload" href="/css/fontello.css" as="style" />
+    <link rel="stylesheet" href="/css/fontello.css" />
+
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+    <link rel="stylesheet" href="/css/PureSuck_Module.css" />
+    <link rel="stylesheet" href="/css/MoxDesign.css" />
+    <link rel="stylesheet" href="/css/animations/index.css" />
+    <link rel="stylesheet" href="/css/OwO.min.css" />
+    <link rel="stylesheet" href="/css/result.css" />
+    <link rel="stylesheet" href="/css/APlayer.min.css" />
+    <link rel="stylesheet" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+
+    {site.postTitleAfter !== "off" ? (
+      <style>
+        {`
+          .post-title::after {
+            content: "";
+            bottom: ${site.postTitleAfter === "wavyLine" ? "-5px" : "5px"};
+            left: 0;
+            ${
+              site.postTitleAfter === "boldLine"
+                ? "width: 58px; height: 11px;"
+                : site.postTitleAfter === "wavyLine"
+                  ? "width: 106px; height: 12px; mask: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"10\" viewBox=\"0 0 40 10\" preserveAspectRatio=\"none\"><path d=\"M0 5 Q 10 0, 20 5 T 40 5\" stroke=\"black\" stroke-width=\"2\" fill=\"transparent\"/></svg>') repeat-x; mask-size: 40px 12px;"
+                  : ""
+            }
+          }
+        `}
+      </style>
+    ) : null}
+
+    <script defer src="/js/lib/medium-zoom.min.js"></script>
+    <script defer src="/js/PureSuck_Shortcodes.js"></script>
+    <script defer src="/js/PureSuck_Module.js"></script>
+    <script defer src="/js/MoxDesign.js"></script>
+    <script defer src="/js/PureSuck_LazyLoad.js"></script>
+    <script async src="/js/OwO.min.js"></script>
+
+    <script defer src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+    <script defer src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+    <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/aplayer/1.10.1/APlayer.min.js"></script>
+
+    <script defer type="text/javascript">
+      function renderLatex() {
+        if (typeof renderMathInElement !== "undefined") {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: "$$", right: "$$", display: true },
+              { left: "$", right: "$", display: false }
+            ],
+            ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+            ignoredClasses: ["nokatex"]
+          });
+        }
+      }
+
+      window.renderLatex = renderLatex;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        renderLatex();
+      });
+
+      document.addEventListener("astro:after-swap", function () {
+        renderLatex();
+      });
+    </script>
+  </head>
+  <body>
+    <div class="wrapper">
+      <Header current={navCurrent} />
+      <div id="swup" data-ps-page-type={pageType}>
+        <main class="main">
+          <slot />
+        </main>
+        <Sidebar tocHtml={tocHtml} />
+        <Footer />
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,125 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { site } from "../../config/site";
+import { getExcerpt } from "../../utils/excerpt";
+
+const toSlug = (value: string) => encodeURIComponent(value.trim().toLowerCase());
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts", ({ data }) => !data.draft);
+  const tagMap = new Map<string, string>();
+  posts.forEach((post) => {
+    (post.data.tags ?? []).forEach((tag) => {
+      tagMap.set(toSlug(tag), tag);
+    });
+  });
+
+  return Array.from(tagMap.entries()).map(([slug, tag]) => ({
+    params: { tag: slug },
+    props: { tag }
+  }));
+}
+
+const { tag } = Astro.props;
+const posts = await getCollection("posts", ({ data }) => !data.draft);
+const filtered = posts.filter((post) => (post.data.tags ?? []).includes(tag));
+---
+<BaseLayout pageType="list" navCurrent="/" title={`标签 ${tag}`}>
+  <div class="wrapper">
+    <h3 class="archive-title">标签 {tag} 下的文章</h3>
+
+    {filtered.length ? (
+      filtered.map((post) => {
+        const hasImg = Boolean(post.data.cover);
+        return (
+          <article
+            class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item`}
+            data-ps-post-key={post.slug}
+          >
+            <div class="post-inner">
+              {site.show.cardCategory && post.data.category ? (
+                <span class="post-cat-vertical">{post.data.category}</span>
+              ) : null}
+
+              <header class={`post-item post-header ${hasImg ? "no-bg" : ""}`}>
+                <div class="wrapper post-wrapper">
+                  <div class="avatar post-author">
+                    <img
+                      src={site.author.avatar}
+                      alt="作者头像"
+                      class="avatar-item avatar-img"
+                      loading="lazy"
+                      decoding="async"
+                      fetchpriority="low"
+                    />
+                    <span class="avatar-item">{site.author.name}</span>
+                  </div>
+                </div>
+              </header>
+
+              {hasImg ? (
+                <figure class="post-media">
+                  <img
+                    itemprop="image"
+                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                    data-lazy-src={post.data.cover}
+                    alt="头图"
+                    decoding="async"
+                    fetchpriority="auto"
+                  />
+                </figure>
+              ) : null}
+
+              <section class="post-item post-body">
+                <div class="wrapper post-wrapper">
+                  <h1 class="post-title">
+                    <a href={`/posts/${post.slug}/`} title={post.data.title}>
+                      {post.data.title}
+                    </a>
+                  </h1>
+                  <p class="post-excerpt">{post.data.description ?? getExcerpt(post.body)}</p>
+                </div>
+              </section>
+
+              <footer class="post-item post-footer">
+                <div class="wrapper post-wrapper">
+                  <div class="meta post-meta">
+                    <a
+                      itemprop="datePublished"
+                      href={`/posts/${post.slug}/`}
+                      class="icon-ui icon-ui-date meta-item meta-date"
+                    >
+                      <span class="meta-count">{post.data.date.toISOString().slice(0, 10)}</span>
+                    </a>
+                    <a href={`/posts/${post.slug}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
+                      暂无评论
+                    </a>
+                  </div>
+                </div>
+              </footer>
+            </div>
+          </article>
+        );
+      })
+    ) : (
+      <article class="post post--text post--index main-item">
+        <div class="post-inner">
+          <section class="post-item post-body" style="margin-top: 0px;">
+            <div class="wrapper post-wrapper">
+              <p style="text-align: center;">
+                <img src="/images/Zai_Cry.png" id="ZaiJPG" alt="没有适合的结果" style="display:block;margin:0 auto;max-height:200px;" />
+              </p>
+              <p style="text-align: center;">肥肠抱歉，没有找到适合的结果( ´ﾟДﾟ`)</p>
+              <p style="text-align: center;">不妨在本站到处逛逛？</p>
+            </div>
+          </section>
+        </div>
+      </article>
+    )}
+  </div>
+
+  <div class="nav main-lastinfo">
+    <span class="nav-item-alt" set:html={site.footerInfo} />
+  </div>
+</BaseLayout>

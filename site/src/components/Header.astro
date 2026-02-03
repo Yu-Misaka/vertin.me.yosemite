@@ -1,0 +1,78 @@
+---
+import { getCollection } from "astro:content";
+import { site } from "../config/site";
+
+const current = Astro.props.current ?? "/";
+const isActive = (href: string) => (current === href ? " nav-item-current" : "");
+const aplayer = site.aplayer;
+
+const pages = await getCollection("pages");
+const pageItems = pages.map((page) => ({
+  label: page.data.title,
+  href: `/${page.slug}`
+}));
+
+const baseItems = site.navItems ?? [];
+const navItems = [...baseItems, ...pageItems].filter((item, index, arr) => {
+  return arr.findIndex((other) => other.href === item.href) === index;
+});
+---
+<header class="header" data-js="header" data-pagefind-ignore>
+  <div class="wrapper header-wrapper header-title">
+    <a href={site.logoIndexUrl} class="avatar-link" aria-label={site.author.name}>
+      <span class="el-avatar el-avatar--circle avatar-hover-effect">
+        <img
+          src={site.logoIndex}
+          style="object-fit:cover;"
+          alt="博主头像"
+          width="120"
+          height="120"
+          data-name="博主名字"
+          draggable="false"
+          fetchpriority="high"
+          decoding="async"
+          loading="eager"
+        />
+      </span>
+    </a>
+    <div class="header-title">{site.titleIndex}</div>
+    <p itemprop="description" class="header-item header-about">{site.description}</p>
+    <div class="nav header-item left-side-custom-code" set:html={site.leftSideCustomCode} />
+    <nav class="nav header-item header-nav">
+      {navItems.map((item) => (
+        <span class={`nav-item${isActive(item.href)}`}>
+          <a href={item.href} title={item.label}>
+            <span>{item.label}</span>
+          </a>
+        </span>
+      ))}
+    </nav>
+    <div class="theme-toggle-container">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="日夜切换">
+        <span id="theme-icon"></span>
+      </button>
+    </div>
+    <div style="color:#1d1f20" class="nav header-item left-side-custom-code">&emsp;</div>
+    {aplayer.enabled ? (
+      <div style="text-align:left" id="aplayer">
+        <script type="text/javascript" set:html={`
+          const ap = new APlayer({
+            container: document.getElementById('aplayer'),
+            theme: ${JSON.stringify(aplayer.theme)},
+            listFolded: ${JSON.stringify(aplayer.listFolded)},
+            listMaxHeight: ${JSON.stringify(aplayer.listMaxHeight)},
+            audio: ${JSON.stringify(aplayer.audio)}
+          });
+        `} />
+        <style>
+          {`
+            .aplayer .aplayer-list {
+              max-height: 96px !important;
+              overflow-y: auto !important;
+            }
+          `}
+        </style>
+      </div>
+    ) : null}
+  </div>
+</header>

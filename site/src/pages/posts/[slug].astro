@@ -1,0 +1,147 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { site } from "../../config/site";
+import Comments from "../../components/Comments.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts", ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await post.render();
+
+const hasImg = Boolean(post.data.cover);
+
+const countChineseChars = (value: string) => {
+  const matches = value.match(/[\u4e00-\u9fa5]/g);
+  return matches ? matches.length : value.replace(/\s+/g, "").length;
+};
+
+const wordCount = countChineseChars(post.body);
+const readingTime = Math.max(1, Math.ceil(wordCount / 300));
+
+const buildTocHtml = (items: typeof headings) => {
+  if (!items?.length) return "";
+  const list = items
+    .map(
+      (item) =>
+        `<li class=\"toc-item toc-level-${item.depth}\"><a href=\"#${item.slug}\">${item.text}</a></li>`
+    )
+    .join("");
+  return `<ul>${list}</ul>`;
+};
+
+const tocHtml = buildTocHtml(headings);
+---
+<BaseLayout pageType="post" navCurrent="/" title={post.data.title} tocHtml={tocHtml}>
+  <div class="wrapper">
+    <article class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index post--single main-item`}>
+      <div class="post-inner">
+        <header class={`post-item post-header ${hasImg ? "no-bg" : ""}`}>
+          <div class="wrapper post-wrapper">
+            <div class="avatar post-author">
+              <img
+                src={site.author.avatar}
+                alt="作者头像"
+                class="avatar-item avatar-img"
+                loading="lazy"
+                decoding="async"
+                fetchpriority="low"
+              />
+              <span class="avatar-item">{site.author.name}</span>
+            </div>
+          </div>
+        </header>
+
+        {hasImg ? (
+          <figure class="post-media single">
+            <img
+              itemprop="image"
+              src={post.data.cover}
+              alt="头图"
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </figure>
+        ) : null}
+
+        <section class="post-item post-body">
+          <div class="wrapper post-wrapper">
+            <h1 class="post-title">
+              <a href={`/posts/${post.slug}/`} title={post.data.title}>
+                {post.data.title}
+              </a>
+            </h1>
+            <div class="inner-post-wrapper">
+              <div class="meta post-meta">
+                <a
+                  itemprop="datePublished"
+                  href={`/posts/${post.slug}/`}
+                  class="icon-ui icon-ui-date meta-item meta-date"
+                >
+                  <span class="meta-count">{post.data.date.toISOString().slice(0, 10)}</span>
+                </a>
+                <a href={`/posts/${post.slug}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
+                  暂无评论
+                </a>
+              </div>
+
+              {site.show.wordCount ? (
+                <div class="meta post-meta">
+                  <div class="icon-record-outline">
+                    全文共&nbsp;{wordCount}&nbsp;字，阅读约&nbsp;{readingTime}&nbsp;分钟
+                  </div>
+                </div>
+              ) : null}
+
+              <div class="post-content" data-pagefind-body>
+                <Content />
+              </div>
+
+              {site.show.copyright ? (
+                <div class="license-info-card">
+                  <div class="license-info-title">{post.data.title}</div>
+                  <a class="license-info-link" href={`/posts/${post.slug}/`}>
+                    {`/posts/${post.slug}/`}
+                  </a>
+                  <div class="license-info-meta">
+                    <div>
+                      <span>本文作者</span>
+                      <span>{site.author.name}</span>
+                    </div>
+                    <div>
+                      <span>发布时间</span>
+                      <span>{post.data.date.toISOString().slice(0, 10)}</span>
+                    </div>
+                    <div>
+                      <span>许可协议</span>
+                      <a href={`https://creativecommons.org/licenses/${site.ccLicense}/4.0/deed.zh-hans`}>
+                        CC {site.ccLicense.toUpperCase()} 4.0
+                      </a>
+                    </div>
+                  </div>
+                  <span class="cc-icon"></span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        <section class="post-item post-comments">
+          <div class="wrapper post-wrapper">
+            <Comments />
+          </div>
+        </section>
+      </div>
+    </article>
+  </div>
+
+  <nav class="nav main-pager" role="navigation" aria-label="Pagination" data-js="pager">
+    <div class="nav main-lastinfo">
+      <span class="nav-item-alt" set:html={site.footerInfo} />
+    </div>
+  </nav>
+</BaseLayout>

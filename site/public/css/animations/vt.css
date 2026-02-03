@@ -1,0 +1,167 @@
+/**
+ * PureSuck 主题 View Transitions 样式
+ *
+ * 包含：
+ * - View Transitions API 基础配置
+ * - 主题切换动画
+ * - VT 模式下的页面过渡
+ * - VT 性能优化
+ *
+ * View Transitions API 说明：
+ * - 使用 ::view-transition-old 和 ::view-transition-new 伪元素
+ * - 支持共享元素动画（morphing）
+ * - 自动处理页面切换的视觉效果
+ */
+
+/* ==================== View Transitions API 基础配置 ==================== */
+
+/* 启用 View Transitions API 的自动导航 */
+@view-transition {
+	navigation: auto;
+}
+
+/* 保持 morph 聚焦于共享元素，避免全页面交叉淡入淡出 */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation: none;
+}
+
+/* ==================== 主题切换动画 ==================== */
+
+/*
+ * 主题切换时的 View Transitions 动画
+ * 使用 ps-theme-vt 类标识主题切换过程
+ */
+
+/* 主题切换统一动画（通过 reverse 反向播放实现淡入） */
+@keyframes ps-theme-fade {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+/* 主题切换时的 VT 动画 */
+html.ps-theme-vt::view-transition-old(root) {
+	animation: ps-theme-fade var(--ps-anim-duration-vt) ease forwards;
+}
+
+html.ps-theme-vt::view-transition-new(root) {
+	animation: ps-theme-fade var(--ps-anim-duration-vt) ease reverse forwards;
+	animation-delay: 40ms;
+}
+
+/* ==================== 共享元素 View Transitions ==================== */
+
+/*
+ * 使用 [data-ps-vt-name] 属性选择器替代 html.ps-vt-mode
+ * 减少样式计算范围：只检查已标记元素，而非全部 DOM
+ */
+
+/* 共享元素容器 - 基础样式 */
+[data-ps-vt-name] {
+	contain: layout style;
+}
+
+/* ==================== 单元素 VT（简化版） ==================== */
+
+/*
+ * 简化 VT：只保留容器 morph，减少浏览器计算开销
+ * 多元素 morph 会导致多次快照计算，每次都是长任务
+ * title 和 author 改为跟随容器动画，不单独 morph
+ */
+[data-ps-vt-name^="ps-post-"] {
+	contain: layout style;
+}
+
+/* ==================== 共享元素动画关键帧 ==================== */
+
+/* 统一的退出动画 */
+@keyframes ps-vt-shared-exit {
+	from {
+		opacity: 1;
+		transform: scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: scale(1.01);
+	}
+}
+
+/* 统一的进入动画 */
+@keyframes ps-vt-shared-enter {
+	0% {
+		opacity: 0;
+		transform: scale(0.97) translateY(8px);
+	}
+	60% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+/* 共享元素的 VT group 动画 */
+::view-transition-group(*) {
+	animation-duration: var(--ps-vt-duration);
+	animation-timing-function: var(--ps-vt-easing);
+	animation-fill-mode: both;
+}
+
+/* 共享元素 old/new 的动画 - 排除 root */
+::view-transition-old(*):not(::view-transition-old(root)) {
+	animation: ps-vt-shared-exit var(--ps-vt-duration) var(--ps-vt-easing) both;
+	border-radius: var(--ps-vt-radius);
+	overflow: hidden;
+}
+
+::view-transition-new(*):not(::view-transition-new(root)) {
+	animation: ps-vt-shared-enter var(--ps-vt-duration) var(--ps-vt-easing) both;
+	border-radius: var(--ps-vt-radius);
+	overflow: hidden;
+}
+
+/* ==================== VT 模式下的页面过渡优化 ==================== */
+
+/*
+ * VT 期间滚动控制
+ * 使用 :has() 选择器检测 #swup.ps-vt-mode，避免在 html 上添加类
+ */
+html:has(#swup.ps-vt-mode) {
+	scroll-behavior: auto !important;
+}
+
+/* ==================== 无障碍支持 ==================== */
+
+/* 用户偏好减少动画时，禁用 VT 动画 */
+@media (prefers-reduced-motion: reduce) {
+	@view-transition {
+		navigation: auto;
+	}
+
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none !important;
+	}
+
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+
+	html.ps-theme-vt::view-transition-old(root),
+	html.ps-theme-vt::view-transition-new(root) {
+		animation: none !important;
+	}
+}
+
+/* ==================== VT 性能优化 ==================== */
+
+/* 使用 contain 属性优化 VT 性能 */
+::view-transition-image-pair(root) {
+	isolation: isolate;
+}
