@@ -1,0 +1,41 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { site } from "../../config/site";
+import PostList from "../../components/PostList.astro";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts", ({ data }) => !data.draft);
+  const pageSize = site.postsPerPage ?? 10;
+  const totalPages = Math.max(1, Math.ceil(posts.length / pageSize));
+
+  if (totalPages <= 1) return [];
+
+  return Array.from({ length: totalPages - 1 }, (_, index) => ({
+    params: { page: String(index + 2) }
+  }));
+}
+
+const pageNumber = Number(Astro.params.page);
+const currentPage = Number.isFinite(pageNumber) && pageNumber > 1 ? pageNumber : 2;
+
+const posts = await getCollection("posts", ({ data }) => !data.draft);
+const sorted = posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const pageSize = site.postsPerPage ?? 10;
+const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+const safePage = Math.min(currentPage, totalPages);
+const start = (safePage - 1) * pageSize;
+const pagePosts = sorted.slice(start, start + pageSize);
+
+const prevUrl = safePage === 2 ? "/" : `/page/${safePage - 1}/`;
+const nextUrl = safePage < totalPages ? `/page/${safePage + 1}/` : null;
+---
+<BaseLayout pageType="list" navCurrent="/">
+  <PostList
+    posts={pagePosts}
+    currentPage={safePage}
+    totalPages={totalPages}
+    prevUrl={prevUrl}
+    nextUrl={nextUrl}
+  />
+</BaseLayout>

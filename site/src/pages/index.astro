@@ -2,88 +2,23 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../config/site";
-import { getExcerpt } from "../utils/excerpt";
+import PostList from "../components/PostList.astro";
 
 const posts = await getCollection("posts", ({ data }) => !data.draft);
 const sorted = posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const pageSize = site.postsPerPage ?? 10;
+const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+const currentPage = 1;
+const pagePosts = sorted.slice(0, pageSize);
+const prevUrl = null;
+const nextUrl = currentPage < totalPages ? `/page/${currentPage + 1}/` : null;
 ---
 <BaseLayout pageType="list" navCurrent="/">
-  <div class="wrapper">
-    {sorted.map((post) => {
-      const hasImg = Boolean(post.data.cover);
-      return (
-        <article
-          class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item`}
-          data-ps-post-key={post.slug}
-        >
-          <div class="post-inner">
-            {site.show.cardCategory && post.data.category ? (
-              <span class="post-cat-vertical">{post.data.category}</span>
-            ) : null}
-
-            <header class={`post-item post-header ${hasImg ? "no-bg" : ""}`}>
-              <div class="wrapper post-wrapper">
-                <div class="avatar post-author">
-                  <img
-                    src={site.author.avatar}
-                    alt="作者头像"
-                    class="avatar-item avatar-img"
-                    loading="lazy"
-                    decoding="async"
-                    fetchpriority="low"
-                  />
-                  <span class="avatar-item">{site.author.name}</span>
-                </div>
-              </div>
-            </header>
-
-            {hasImg ? (
-              <figure class="post-media">
-                <img
-                  itemprop="image"
-                  src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-                  data-lazy-src={post.data.cover}
-                  alt="头图"
-                  decoding="async"
-                  fetchpriority="auto"
-                />
-              </figure>
-            ) : null}
-
-            <section class="post-item post-body">
-              <div class="wrapper post-wrapper">
-                <h1 class="post-title">
-                  <a href={`/posts/${post.slug}/`}>{post.data.title}</a>
-                </h1>
-                <p class="post-excerpt">
-                  {post.data.description ?? getExcerpt(post.body)}
-                </p>
-              </div>
-            </section>
-
-            <footer class="post-item post-footer">
-              <div class="wrapper post-wrapper">
-                <div class="meta post-meta">
-                  <a
-                    itemprop="datePublished"
-                    href={`/posts/${post.slug}/`}
-                    class="icon-ui icon-ui-date meta-item meta-date"
-                  >
-                    <span class="meta-count">{post.data.date.toISOString().slice(0, 10)}</span>
-                  </a>
-                  <a href={`/posts/${post.slug}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
-                    暂无评论
-                  </a>
-                </div>
-              </div>
-            </footer>
-          </div>
-        </article>
-      );
-    })}
-  </div>
-
-  <div class="nav main-lastinfo">
-    <span class="nav-item-alt" set:html={site.footerInfo} />
-  </div>
+  <PostList
+    posts={pagePosts}
+    currentPage={currentPage}
+    totalPages={totalPages}
+    prevUrl={prevUrl}
+    nextUrl={nextUrl}
+  />
 </BaseLayout>

@@ -16,6 +16,18 @@
       .replace(/\[\/tab\](<br\s*\/?>)?/gi, '[/tab]');
   }
 
+  function normalizeShortcodeQuotes(html) {
+    const shortcodePattern =
+      /\[(alert|window|friend-card|collapsible-panel|timeline|timeline-event|tabs|tab|bilibili-card|PicGrid)[^\]]*\]/gi;
+    return html.replace(shortcodePattern, function (match) {
+      return match
+        .replace(/[“”]/g, '"')
+        .replace(/[‘’]/g, "'")
+        .replace(/&quot;|&#34;|&#8220;|&#8221;/g, '"')
+        .replace(/&apos;|&#39;|&#8216;|&#8217;/g, "'");
+    });
+  }
+
   function parseAlerts(html) {
     return html.replace(/\[alert type="([^"]*)"\]([\s\S]*?)\[\/alert\]/gi, function (_, type, text) {
       const map = {
@@ -305,6 +317,7 @@
 
   function processShortcodes(root) {
     let html = root.innerHTML;
+    html = normalizeShortcodeQuotes(html);
     html = normalizeShortcodeLineBreaks(html);
     html = parseAlerts(html);
     html = parseWindows(html);
@@ -356,4 +369,14 @@
   document.addEventListener('astro:after-swap', function () {
     initialize(document);
   });
+
+  document.addEventListener('swup:contentReplaced', function () {
+    initialize(document);
+  });
+
+  document.addEventListener('swup:page:view', function () {
+    initialize(document);
+  });
+
+  window.__psShortcodesInit = initialize;
 })();

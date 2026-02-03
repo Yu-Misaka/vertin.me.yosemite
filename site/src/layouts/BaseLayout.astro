@@ -1,5 +1,4 @@
 ---
-import { ViewTransitions } from "astro:transitions";
 import Header from "../components/Header.astro";
 import Sidebar from "../components/Sidebar.astro";
 import Footer from "../components/Footer.astro";
@@ -29,20 +28,11 @@ const pageTitle = title ? `${title} - ${site.title}` : site.title;
     <link rel="preconnect" href="https://cdn.academe.city" crossorigin />
     <link rel="preconnect" href="https://mirrors.sustech.edu.cn" crossorigin />
 
-    <ViewTransitions />
-
-    <style>
-      {`
-        :root {
-          --themecolor: ${themeTokens.light.theme};
-          --themehovercolor: ${themeTokens.light.hover};
-        }
-        [data-theme="dark"] {
-          --themecolor: ${themeTokens.dark.theme};
-          --themehovercolor: ${themeTokens.dark.hover};
-        }
-      `}
-    </style>
+    <style
+      is:inline
+      set:html={`:root{--themecolor:${themeTokens.light.theme};--themehovercolor:${themeTokens.light.hover};}
+      [data-theme="dark"]{--themecolor:${themeTokens.dark.theme};--themehovercolor:${themeTokens.dark.hover};}`}
+    />
 
     <script>
       window.THEME_URL = "";
@@ -112,6 +102,13 @@ const pageTitle = title ? `${title} - ${site.title}` : site.title;
     <script defer src="/js/PureSuck_Module.js"></script>
     <script defer src="/js/MoxDesign.js"></script>
     <script defer src="/js/PureSuck_LazyLoad.js"></script>
+    <script defer src="/js/lib/Swup/Swup.umd.min.js"></script>
+    <script defer src="/js/lib/Swup/scroll-plugin.js"></script>
+    <script defer src="/js/lib/Swup/preload-plugin.js"></script>
+    <script defer src="/js/lib/Swup/head-plugin.js"></script>
+    <script defer src="/js/PureSuck_Swup.js"></script>
+    <script defer src="/js/PureSuck_APlayer.js"></script>
+    <script defer src="/js/PureSuck_Fallback.js"></script>
     <script async src="/js/OwO.min.js"></script>
 
     <script defer src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
@@ -151,8 +148,8 @@ const pageTitle = title ? `${title} - ${site.title}` : site.title;
           <slot />
         </main>
         <Sidebar tocHtml={tocHtml} />
-        <Footer />
       </div>
+      <Footer />
     </div>
   </body>
 </html>

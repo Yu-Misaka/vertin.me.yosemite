@@ -37,7 +37,10 @@ const tocHtml = buildTocHtml(headings);
 ---
 <BaseLayout pageType="post" navCurrent="/" title={post.data.title} tocHtml={tocHtml}>
   <div class="wrapper">
-    <article class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index post--single main-item`}>
+    <article
+      class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index post--single main-item`}
+      data-ps-post-key={post.slug}
+    >
       <div class="post-inner">
         <header class={`post-item post-header ${hasImg ? "no-bg" : ""}`}>
           <div class="wrapper post-wrapper">

@@ -4,13 +4,14 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import { site } from "../../config/site";
 import { getExcerpt } from "../../utils/excerpt";
 
-const toSlug = (value: string) => encodeURIComponent(value.trim().toLowerCase());
-
 export async function getStaticPaths() {
   const posts = await getCollection("posts", ({ data }) => !data.draft);
   const categoryMap = new Map<string, string>();
   posts.forEach((post) => {
-    if (post.data.category) categoryMap.set(toSlug(post.data.category), post.data.category);
+    if (post.data.category) {
+      const slug = encodeURIComponent(post.data.category.trim().toLowerCase());
+      categoryMap.set(slug, post.data.category);
+    }
   });
 
   return Array.from(categoryMap.entries()).map(([slug, category]) => ({
@@ -32,8 +33,10 @@ const filtered = posts.filter((post) => post.data.category === category);
         const hasImg = Boolean(post.data.cover);
         return (
           <article
-            class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item`}
+            class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item ps-enter-hidden-list`}
             data-ps-post-key={post.slug}
+            data-protected="false"
+            data-swup-animation
           >
             <div class="post-inner">
               {site.show.cardCategory && post.data.category ? (
@@ -101,7 +104,7 @@ const filtered = posts.filter((post) => post.data.category === category);
         );
       })
     ) : (
-      <article class="post post--text post--index main-item">
+      <article class="post post--text post--index main-item ps-enter-hidden-list" data-swup-animation>
         <div class="post-inner">
           <section class="post-item post-body" style="margin-top: 0px;">
             <div class="wrapper post-wrapper">
@@ -117,7 +120,7 @@ const filtered = posts.filter((post) => post.data.category === category);
     )}
   </div>
 
-  <div class="nav main-lastinfo">
+  <div class="nav main-lastinfo ps-enter-hidden-list">
     <span class="nav-item-alt" set:html={site.footerInfo} />
   </div>
 </BaseLayout>

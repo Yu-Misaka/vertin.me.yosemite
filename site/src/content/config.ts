@@ -20,7 +20,8 @@ const pages = defineCollection({
     title: z.string(),
     description: z.string().optional(),
     date: z.date().optional(),
-    cover: z.string().optional()
+    cover: z.string().optional(),
+    order: z.number().optional()
   })
 });
 

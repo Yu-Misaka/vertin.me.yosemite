@@ -1,31 +1,34 @@
 export const site = {
-  title: "Vertin.me",
-  titleIndex: "Vertin.me",
-  description: "ワクワク",
+  title: "Vertin - Misaka Foundation",
+  titleIndex: "御坂誉",
+  description: "Vertin - Misaka Foundation",
   author: {
     name: "Suzuka",
     avatar: "/images/avatar.webp"
   },
   logoIndex: "/images/avatar.webp",
   logoIndexUrl: "/",
-  footerInfo: "在 Typecho 后台主题设置填写此处字段<br>感谢使用 PureSuck 主题",
+  footerInfo:
+    "<small><p><b>美丽新世界</b><br><a href=\"https://misakafund.org\">御坂基金会</a>授权</p></small>",
   footerScript: "",
-  leftSideCustomCode: "",
+  postsPerPage: 10,
+  leftSideCustomCode:
+    "<img src=\"https://cdn.academe.city/vertin.me/persistent-image/2252397-black.webp\" />",
   show: {
     search: true,
     toc: true,
     tag: true,
     category: true,
-    cardCategory: true,
+    cardCategory: false,
     wordCount: true,
     copyright: true
   },
   postTitleAfter: "off" as const,
   ccLicense: "by-nc-sa" as const,
-  themeColor: "pink" as const,
+  themeColor: "yellow" as const,
   navItems: [
-    { label: "首页", href: "/" },
-    { label: "归档", href: "/archives" }
+    { label: "首页", href: "/", order: 0 },
+    { label: "归墟 Archives", href: "/archives", order: 2 }
   ],
   comments: {
     provider: "twikoo",

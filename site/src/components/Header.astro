@@ -7,14 +7,25 @@ const isActive = (href: string) => (current === href ? " nav-item-current" : "")
 const aplayer = site.aplayer;
 
 const pages = await getCollection("pages");
-const pageItems = pages.map((page) => ({
-  label: page.data.title,
-  href: `/${page.slug}`
-}));
+const pageItems = pages
+  .slice()
+  .sort((a, b) => (a.data.order ?? 999) - (b.data.order ?? 999))
+  .map((page) => ({
+    label: page.data.title,
+    href: `/${page.slug}`,
+    order: page.data.order
+  }));
 
 const baseItems = site.navItems ?? [];
-const navItems = [...baseItems, ...pageItems].filter((item, index, arr) => {
-  return arr.findIndex((other) => other.href === item.href) === index;
+const baseHrefSet = new Set(baseItems.map((item) => item.href));
+const merged = [...baseItems, ...pageItems.filter((item) => !baseHrefSet.has(item.href))];
+const navItems = merged.slice().sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
+const aplayerConfig = JSON.stringify({
+  theme: aplayer.theme,
+  listFolded: aplayer.listFolded,
+  listMaxHeight: aplayer.listMaxHeight,
+  audio: aplayer.audio
 });
 ---
 <header class="header" data-js="header" data-pagefind-ignore>
@@ -49,21 +60,23 @@ const navItems = [...baseItems, ...pageItems].filter((item, index, arr) => {
     </nav>
     <div class="theme-toggle-container">
       <button class="theme-toggle" onclick="toggleTheme()" aria-label="日夜切换">
-        <span id="theme-icon"></span>
+        <span id="theme-icon" class="icon-moon-inv"></span>
       </button>
     </div>
     <div style="color:#1d1f20" class="nav header-item left-side-custom-code">&emsp;</div>
     {aplayer.enabled ? (
-      <div style="text-align:left" id="aplayer">
-        <script type="text/javascript" set:html={`
-          const ap = new APlayer({
-            container: document.getElementById('aplayer'),
+      <div style="text-align:left" id="aplayer" data-aplayer-config={aplayerConfig}>
+        <script is:inline>{`
+          window.__aplayerConfig = {
             theme: ${JSON.stringify(aplayer.theme)},
             listFolded: ${JSON.stringify(aplayer.listFolded)},
             listMaxHeight: ${JSON.stringify(aplayer.listMaxHeight)},
             audio: ${JSON.stringify(aplayer.audio)}
-          });
-        `} />
+          };
+          if (typeof window.__initAPlayer === 'function') {
+            window.__initAPlayer();
+          }
+        `}</script>
         <style>
           {`
             .aplayer .aplayer-list {
