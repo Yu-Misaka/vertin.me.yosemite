@@ -4,7 +4,7 @@ export const site = {
   description: "Vertin - Misaka Foundation",
   author: {
     name: "Suzuka",
-    avatar: "/images/avatar.webp"
+    avatar: "/images/avatar-1.webp"
   },
   logoIndex: "/images/avatar.webp",
   logoIndexUrl: "/",
@@ -23,7 +23,7 @@ export const site = {
     wordCount: true,
     copyright: true
   },
-  postTitleAfter: "off" as const,
+  postTitleAfter: "boldLine" as const,
   ccLicense: "by-nc-sa" as const,
   themeColor: "yellow" as const,
   navItems: [

@@ -4,7 +4,7 @@ description: "这是 Astro 迁移后的示例文章。"
 date: 2024-01-01
 tags: ["随笔"]
 category: "随笔"
-cover: "/images/avatar.webp"
+cover: "https://cdn.academe.city/vertin.me/content-image/2024-11-28/th.jpg"
 ---
 
 欢迎来到新的站点。
