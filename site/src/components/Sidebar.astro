@@ -76,6 +76,9 @@ const tocHtml = Astro.props.tocHtml ?? "";
           ) : (
             <p>没有任何标签</p>
           )}
+          {tags.length > 20 ? (
+            <a href="/archives" class="cloud-item">...</a>
+          ) : null}
         </div>
       </section>
     </div>

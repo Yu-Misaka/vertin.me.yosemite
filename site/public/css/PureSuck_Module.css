@@ -1366,3 +1366,10 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
     transform-origin: left top;
     width: fit-content;
 }
+
+/* APlayer list scroll */
+.aplayer .aplayer-list {
+    max-height: 96px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+}
