@@ -2,7 +2,7 @@
 import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { site } from "../../config/site";
-import { getExcerpt } from "../../utils/excerpt";
+import PostList from "../../components/PostList.astro";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts", ({ data }) => !data.draft);
@@ -39,111 +39,27 @@ const nextUrl = currentPage < totalPages ? `/categories/${categorySlug}/page/${c
     <h3 class="archive-title">分类 {category} 下的文章</h3>
 
     {pagePosts.length ? (
-      pagePosts.map((post) => {
-        const hasImg = Boolean(post.data.cover);
-        return (
-          <article
-            class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item ps-enter-hidden-list`}
-            data-ps-post-key={post.slug}
-            data-protected="false"
-            data-swup-animation
-          >
-            <div class="post-inner">
-              {site.show.cardCategory && post.data.category ? (
-                <span class="post-cat-vertical">{post.data.category}</span>
-              ) : null}
-
-              <header class={`post-item post-header ${hasImg ? "no-bg" : ""}`}>
-                <div class="wrapper post-wrapper">
-                  <div class="avatar post-author">
-                    <img
-                      src={site.author.avatar}
-                      alt="作者头像"
-                      class="avatar-item avatar-img"
-                      loading="lazy"
-                      decoding="async"
-                      fetchpriority="low"
-                    />
-                    <span class="avatar-item">{site.author.name}</span>
-                  </div>
-                </div>
-              </header>
-
-              {hasImg ? (
-                <figure class="post-media">
-                  <img
-                    itemprop="image"
-                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-                    data-lazy-src={post.data.cover}
-                    alt="头图"
-                    decoding="async"
-                    fetchpriority="auto"
-                  />
-                </figure>
-              ) : null}
-
-              <section class="post-item post-body">
-                <div class="wrapper post-wrapper">
-                  <h1 class="post-title">
-                    <a href={`/posts/${post.slug}/`} title={post.data.title}>
-                      {post.data.title}
-                    </a>
-                  </h1>
-                  <p class="post-excerpt">{post.data.description ?? getExcerpt(post.body)}</p>
-                </div>
-              </section>
-
-              <footer class="post-item post-footer">
-                <div class="wrapper post-wrapper">
-                  <div class="meta post-meta">
-                    <a
-                      itemprop="datePublished"
-                      href={`/posts/${post.slug}/`}
-                      class="icon-ui icon-ui-date meta-item meta-date"
-                    >
-                      <span class="meta-count">{post.data.date.toISOString().slice(0, 10)}</span>
-                    </a>
-                    <a href={`/posts/${post.slug}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
-                      暂无评论
-                    </a>
-                  </div>
-                </div>
-              </footer>
-            </div>
-          </article>
-        );
-      })
+      <PostList
+        posts={pagePosts}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        prevUrl={prevUrl}
+        nextUrl={nextUrl}
+      />
     ) : (
       <article class="post post--text post--index main-item ps-enter-hidden-list" data-swup-animation>
         <div class="post-inner">
-          <section class="post-item post-body" style="margin-top: 0px;">
+          <section class="post-item post-body is-tight-top">
             <div class="wrapper post-wrapper">
-              <p style="text-align: center;">
-                <img src="/images/Zai_Cry.png" id="ZaiJPG" alt="没有适合的结果" style="display:block;margin:0 auto;max-height:200px;" />
+              <p class="is-centered">
+                <img src="/images/Zai_Cry.png" id="ZaiJPG" alt="没有适合的结果" class="empty-state-image" />
               </p>
-              <p style="text-align: center;">肥肠抱歉，没有找到适合的结果( ´ﾟДﾟ`)</p>
-              <p style="text-align: center;">不妨在本站到处逛逛？</p>
+              <p class="is-centered">肥肠抱歉，没有找到适合的结果( ´ﾟДﾟ`)</p>
+              <p class="is-centered">不妨在本站到处逛逛？</p>
             </div>
           </section>
         </div>
       </article>
     )}
-  </div>
-
-  <nav class="nav main-pager ps-enter-hidden-list" data-js="pager" data-swup-animation>
-    <span class="nav-item-alt">第 {currentPage} 页 / 共 {totalPages} 页</span>
-    <div class="nav nav--pager">
-      {prevUrl ? (
-        <a class="prev" href={prevUrl}>上一页</a>
-      ) : null}
-      <i class="icon-record-outline"></i>
-      {nextUrl ? (
-        <a class="next" href={nextUrl}>下一页</a>
-      ) : null}
-    </div>
-  </nav>
-
-  <div class="nav main-lastinfo ps-enter-hidden-list">
-    <span class="nav-item-alt" set:html={site.footerInfo} />
   </div>
 </BaseLayout>

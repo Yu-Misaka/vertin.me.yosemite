@@ -117,6 +117,28 @@
     height: 100%;
 }
 
+.is-centered {
+    text-align: center;
+}
+
+.is-tight-top {
+    margin-top: 0;
+}
+
+.empty-state-image {
+    display: block;
+    margin: 0 auto;
+    max-height: 200px;
+}
+
+.header-spacer {
+    color: #1d1f20;
+}
+
+.aplayer-shell {
+    text-align: left;
+}
+
 /* 短代码模块相关 CSS 位于下方 */
 /* ALERT */
 .text-xs.font-semibold {
