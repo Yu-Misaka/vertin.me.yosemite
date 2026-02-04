@@ -2,3 +2,4 @@
 node_modules
 repo
 .DS_Store
+dist

@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { site } from "../../config/site";
 import Comments from "../../components/Comments.astro";
+import { getExcerpt } from "../../utils/excerpt";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts", ({ data }) => !data.draft);
@@ -13,6 +14,7 @@ const { post } = Astro.props;
 const { Content, headings } = await post.render();
 
 const hasImg = Boolean(post.data.cover);
+const excerpt = post.data.description ?? getExcerpt(post.body);
 
 const countChineseChars = (value: string) => {
   const matches = value.match(/[\u4e00-\u9fa5]/g);
@@ -110,6 +112,15 @@ const tocHtml = buildTocHtml(headings);
               ) : null}
 
               <div class="post-content" data-pagefind-body>
+                <div class="pagefind-meta" style="display:none">
+                  <span data-pagefind-meta="title">{post.data.title}</span>
+                  <span data-pagefind-meta="date">{post.data.date.toISOString().slice(0, 10)}</span>
+                  <span data-pagefind-meta="description">{excerpt}</span>
+                  <span data-pagefind-meta="slug">{post.slug}</span>
+                  <span data-pagefind-meta="type">post</span>
+                  {post.data.category ? <span data-pagefind-meta="category">{post.data.category}</span> : null}
+                  {post.data.cover ? <span data-pagefind-meta="image">{post.data.cover}</span> : null}
+                </div>
                 <Content />
               </div>
 
