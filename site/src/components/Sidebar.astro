@@ -3,7 +3,7 @@ import { getCollection } from "astro:content";
 import { site } from "../config/site";
 
 const posts = await getCollection("posts", ({ data }) => !data.draft);
-const toSlug = (value: string) => encodeURIComponent(value.trim().toLowerCase());
+const toSlug = (value: string) => encodeURIComponent(value.trim());
 
 const categories = Array.from(
   new Set(posts.map((post) => post.data.category).filter(Boolean) as string[])

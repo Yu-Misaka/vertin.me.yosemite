@@ -9,7 +9,7 @@ export async function getStaticPaths() {
   const categoryMap = new Map<string, string>();
   posts.forEach((post) => {
     if (post.data.category) {
-      const slug = encodeURIComponent(post.data.category.trim().toLowerCase());
+      const slug = post.data.category.trim();
       categoryMap.set(slug, post.data.category);
     }
   });

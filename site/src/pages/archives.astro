@@ -69,7 +69,7 @@ const formatChars = (value: number) => {
                 <div class="cloud-container">
                   {tags.length ? (
                     tags.map((tag) => (
-                      <a href={`/tags/${encodeURIComponent(tag.toLowerCase())}/`} class="cloud-item">
+                      <a href={`/tags/${encodeURIComponent(tag)}/`} class="cloud-item">
                         {tag}
                       </a>
                     ))
