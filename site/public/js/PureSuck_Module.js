@@ -858,34 +858,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function runThemeViewTransition(update) {
-        if (!supportsViewTransition() || prefersReducedMotion()) {
-            update();
-            return;
-        }
-
-        const root = document.documentElement;
-        root.classList.add('ps-theme-vt');
-
-        let transition;
-        try {
-            transition = document.startViewTransition(() => {
-                update();
-            });
-        } catch (e) {
-            root.classList.remove('ps-theme-vt');
-            update();
-            return;
-        }
-
-        if (transition && transition.finished) {
-            transition.finished.finally(() => {
-                root.classList.remove('ps-theme-vt');
-            });
-        } else {
-            setTimeout(() => {
-                root.classList.remove('ps-theme-vt');
-            }, 380);  // 与 VT 动画时长保持一致
-        }
+        // 关闭主题切换的 View Transitions，避免全页淡入淡出闪烁
+        update();
     }
 
     /**
