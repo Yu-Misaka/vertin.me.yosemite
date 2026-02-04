@@ -6,13 +6,24 @@ const posts = await getCollection("posts", ({ data }) => !data.draft);
 const toSlug = (value: string) => encodeURIComponent(value.trim());
 
 const categories = Array.from(
-  new Set(posts.map((post) => post.data.category).filter(Boolean) as string[])
+  new Set(
+    posts
+      .map((post) => post.data.category)
+      .filter(Boolean)
+      .map((name) => name.trim())
+      .filter(Boolean) as string[]
+  )
 )
   .map((name) => ({ name, slug: toSlug(name) }))
   .sort((a, b) => a.name.localeCompare(b.name, "zh"));
 
 const tags = Array.from(
-  new Set(posts.flatMap((post) => post.data.tags ?? []))
+  new Set(
+    posts
+      .flatMap((post) => post.data.tags ?? [])
+      .map((name) => name.trim())
+      .filter(Boolean)
+  )
 )
   .map((name) => ({ name, slug: toSlug(name) }))
   .sort((a, b) => a.name.localeCompare(b.name, "zh"));

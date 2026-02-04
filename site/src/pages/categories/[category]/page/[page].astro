@@ -1,38 +1,57 @@
 ---
 import { getCollection } from "astro:content";
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { site } from "../../config/site";
-import { getExcerpt } from "../../utils/excerpt";
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import { site } from "../../../../config/site";
+import { getExcerpt } from "../../../../utils/excerpt";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts", ({ data }) => !data.draft);
-  const categoryMap = new Map<string, string>();
+  const pageSize = site.postsPerPage ?? 10;
+  const categoryMap = new Map<string, { name: string; count: number }>();
+
   posts.forEach((post) => {
-    if (post.data.category) {
-      const name = post.data.category.trim();
-      if (!name) return;
-      categoryMap.set(name, name);
-    }
+    if (!post.data.category) return;
+    const name = post.data.category.trim();
+    if (!name) return;
+    const entry = categoryMap.get(name) ?? { name, count: 0 };
+    entry.count += 1;
+    categoryMap.set(name, entry);
   });
 
-  return Array.from(categoryMap.entries()).map(([slug, name]) => ({
-    params: { category: slug },
-    props: { category: name }
-  }));
+  const paths: Array<{ params: { category: string; page: string }; props: { category: string } }> = [];
+  for (const [slug, entry] of categoryMap.entries()) {
+    const totalPages = Math.max(1, Math.ceil(entry.count / pageSize));
+    for (let page = 2; page <= totalPages; page += 1) {
+      paths.push({ params: { category: slug, page: String(page) }, props: { category: entry.name } });
+    }
+  }
+
+  return paths;
 }
 
 const { category } = Astro.props;
 const categorySlug = encodeURIComponent(category ?? "");
+const pageNumber = Number(Astro.params.page);
+const currentPage = Number.isFinite(pageNumber) && pageNumber > 1 ? pageNumber : 2;
+
 const posts = await getCollection("posts", ({ data }) => !data.draft);
 const filtered = posts
   .filter((post) => post.data.category?.trim() === category)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
 const pageSize = site.postsPerPage ?? 10;
 const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-const currentPage = 1;
-const pagePosts = filtered.slice(0, pageSize);
-const prevUrl = null;
-const nextUrl = currentPage < totalPages ? `/categories/${categorySlug}/page/${currentPage + 1}/` : null;
+const safePage = Math.min(currentPage, totalPages);
+const start = (safePage - 1) * pageSize;
+const pagePosts = filtered.slice(start, start + pageSize);
+
+const prevUrl =
+  safePage <= 1
+    ? null
+    : safePage === 2
+      ? `/categories/${categorySlug}/`
+      : `/categories/${categorySlug}/page/${safePage - 1}/`;
+const nextUrl = safePage < totalPages ? `/categories/${categorySlug}/page/${safePage + 1}/` : null;
 ---
 <BaseLayout pageType="list" navCurrent="/" title={`分类 ${category}`}>
   <div class="wrapper">
@@ -131,7 +150,7 @@ const nextUrl = currentPage < totalPages ? `/categories/${categorySlug}/page/${c
   </div>
 
   <nav class="nav main-pager ps-enter-hidden-list" data-js="pager" data-swup-animation>
-    <span class="nav-item-alt">第 {currentPage} 页 / 共 {totalPages} 页</span>
+    <span class="nav-item-alt">第 {safePage} 页 / 共 {totalPages} 页</span>
     <div class="nav nav--pager">
       {prevUrl ? (
         <a class="prev" href={prevUrl}>上一页</a>

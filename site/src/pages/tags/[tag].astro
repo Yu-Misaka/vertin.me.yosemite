@@ -9,27 +9,37 @@ export async function getStaticPaths() {
   const tagMap = new Map<string, string>();
   posts.forEach((post) => {
     (post.data.tags ?? []).forEach((tag) => {
-      const slug = tag.trim();
-      tagMap.set(slug, tag);
+      const name = tag.trim();
+      if (!name) return;
+      tagMap.set(name, name);
     });
   });
 
-  return Array.from(tagMap.entries()).map(([slug, tag]) => ({
+  return Array.from(tagMap.entries()).map(([slug, name]) => ({
     params: { tag: slug },
-    props: { tag }
+    props: { tag: name }
   }));
 }
 
 const { tag } = Astro.props;
+const tagSlug = encodeURIComponent(tag ?? "");
 const posts = await getCollection("posts", ({ data }) => !data.draft);
-const filtered = posts.filter((post) => (post.data.tags ?? []).includes(tag));
+const filtered = posts
+  .filter((post) => (post.data.tags ?? []).some((entry) => entry.trim() === tag))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const pageSize = site.postsPerPage ?? 10;
+const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+const currentPage = 1;
+const pagePosts = filtered.slice(0, pageSize);
+const prevUrl = null;
+const nextUrl = currentPage < totalPages ? `/tags/${tagSlug}/page/${currentPage + 1}/` : null;
 ---
 <BaseLayout pageType="list" navCurrent="/" title={`标签 ${tag}`}>
   <div class="wrapper">
     <h3 class="archive-title">标签 {tag} 下的文章</h3>
 
-    {filtered.length ? (
-      filtered.map((post) => {
+    {pagePosts.length ? (
+      pagePosts.map((post) => {
         const hasImg = Boolean(post.data.cover);
         return (
           <article
@@ -121,9 +131,15 @@ const filtered = posts.filter((post) => (post.data.tags ?? []).includes(tag));
   </div>
 
   <nav class="nav main-pager ps-enter-hidden-list" data-js="pager" data-swup-animation>
-    <span class="nav-item-alt">第 1 页 / 共 1 页</span>
+    <span class="nav-item-alt">第 {currentPage} 页 / 共 {totalPages} 页</span>
     <div class="nav nav--pager">
+      {prevUrl ? (
+        <a class="prev" href={prevUrl}>上一页</a>
+      ) : null}
       <i class="icon-record-outline"></i>
+      {nextUrl ? (
+        <a class="next" href={nextUrl}>下一页</a>
+      ) : null}
     </div>
   </nav>
 
