@@ -22,15 +22,24 @@ const countChineseChars = (value: string) => {
 const wordCount = countChineseChars(post.body);
 const readingTime = Math.max(1, Math.ceil(wordCount / 300));
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 const buildTocHtml = (items: typeof headings) => {
   if (!items?.length) return "";
   const list = items
-    .map(
-      (item) =>
-        `<li class=\"toc-item toc-level-${item.depth}\"><a href=\"#${item.slug}\">${item.text}</a></li>`
-    )
+    .map((item) => {
+      const text = escapeHtml(item.text);
+      const slug = item.slug;
+      return `<li class="li li-${item.depth}"><a href="#${slug}" id="link-${slug}" class="toc-a">${text}</a></li>`;
+    })
     .join("");
-  return `<ul>${list}</ul>`;
+  return `<div class="dir"><ul id="toc">${list}</ul><div class="sider"><span class="siderbar"></span></div></div>`;
 };
 
 const tocHtml = buildTocHtml(headings);

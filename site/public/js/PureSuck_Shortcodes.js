@@ -28,6 +28,75 @@
     });
   }
 
+  function splitTrailingPunctuation(url) {
+    let suffix = '';
+    while (/[)\].,!?:;，。！？；：、”’》】）]$/.test(url)) {
+      suffix = url.slice(-1) + suffix;
+      url = url.slice(0, -1);
+    }
+    return { url, suffix };
+  }
+
+  function linkifyTextNodes(root) {
+    if (!root || !root.querySelectorAll) return;
+
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue || !/https?:\/\//i.test(node.nodeValue)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('a, code, pre, kbd, samp, script, style, textarea')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    const targets = [];
+    while (walker.nextNode()) {
+      targets.push(walker.currentNode);
+    }
+
+    targets.forEach(function (textNode) {
+      const text = textNode.nodeValue;
+      const regex = /https?:\/\/[^\s<]+/gi;
+      let lastIndex = 0;
+      let match;
+      const fragment = document.createDocumentFragment();
+
+      while ((match = regex.exec(text))) {
+        const matchText = match[0];
+        const start = match.index;
+        const split = splitTrailingPunctuation(matchText);
+
+        if (start > lastIndex) {
+          fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+        }
+
+        const link = document.createElement('a');
+        link.href = split.url;
+        link.textContent = split.url;
+        fragment.appendChild(link);
+
+        if (split.suffix) {
+          fragment.appendChild(document.createTextNode(split.suffix));
+        }
+
+        lastIndex = start + matchText.length;
+      }
+
+      if (lastIndex < text.length) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+      }
+
+      if (fragment.childNodes.length) {
+        textNode.parentNode.replaceChild(fragment, textNode);
+      }
+    });
+  }
+
   function parseAlerts(html) {
     return html.replace(/\[alert type="([^"]*)"\]([\s\S]*?)\[\/alert\]/gi, function (_, type, text) {
       const map = {
@@ -335,6 +404,7 @@
     wrapFriendCards(root);
     addFigcaptions(root);
     applyLazyLoad(root);
+    linkifyTextNodes(root);
   }
 
   function processAll(scope) {
