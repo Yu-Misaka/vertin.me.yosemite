@@ -5,28 +5,9 @@ const envId = site.comments?.provider === "twikoo" ? site.comments.envId : "";
 const enabled = Boolean(envId);
 ---
 {enabled ? (
-  <div id="comments" class="cf" data-pagefind-ignore>
+  <div id="comments" class="cf" data-pagefind-ignore data-twikoo-env={envId}>
     <h1 class="comment-title">评论</h1>
     <div id="tcomment"></div>
-    <script
-      is:inline
-    >{`
-      window.__twikooEnvId = ${JSON.stringify(envId)};
-      window.__initTwikoo = function () {
-        if (!window.twikoo || !window.__twikooEnvId) return;
-        window.twikoo.init({
-          envId: window.__twikooEnvId,
-          el: "#tcomment",
-          path: window.location.pathname
-        });
-      };
-      document.addEventListener("astro:page-load", function () {
-        window.__initTwikoo && window.__initTwikoo();
-      });
-      document.addEventListener("astro:after-swap", function () {
-        window.__initTwikoo && window.__initTwikoo();
-      });
-    `}</script>
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js"
