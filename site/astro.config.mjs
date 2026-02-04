@@ -9,6 +9,12 @@ export default defineConfig({
   markdown: {
     gfm: false,
     remarkPlugins: [remarkGfmNoAutolink],
-    rehypePlugins: [rehypeWrapTables]
+    rehypePlugins: [rehypeWrapTables],
+    shikiConfig: {
+      themes: {
+        light: "github-light",
+        dark: "github-dark"
+      }
+    }
   }
 });
