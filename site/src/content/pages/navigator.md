@@ -1,6 +1,7 @@
 ---
 title: "司南 Navigator"
 order: 1
+date: 2024-10-29
 cover: "https://cdn.academe.city/vertin.me/persistent-image/vlcsnap-2024-03-23-09h40m52s402.webp"
 ---
 
