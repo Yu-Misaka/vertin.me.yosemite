@@ -1,30 +1,7 @@
-## 环境要求
-
-- Node.js：由当前依赖的 Astro 版本决定，建议使用 `^18.17.1 || ^20.3.0 || >=21`（见 `node_modules/astro/package.json` 的 `engines.node`）
-- 包管理器：本项目带有 `package-lock.json`，默认使用 `npm`
-
-## 快速开始
-
-在项目根目录下执行：
-
-```bash
-cd site
-npm install
-npm run dev
-```
+> [!WARNING]
+> 这是一个自用项目，代码全部由codex从[PureSuck-theme](https://github.com/MoXiaoXi233/PureSuck-theme)迁移，请优先查看部署原作者的主题。
 
 开发服务器启动后，默认访问：`http://localhost:4321/`
-
-## 构建与预览
-
-```bash
-cd site
-npm run build
-npm run preview
-```
-
-- `npm run build` = `astro build` +（postbuild）`pagefind --site dist`
-- 构建产物在 `site/dist/`，可直接部署到任意静态托管（Nginx / GitHub Pages / Cloudflare Pages / OSS 等）
 
 ## 内容组织
 
@@ -137,11 +114,4 @@ Frontmatter 字段（见 `site/src/content/config.ts`）：
   - `[tab title="标题"]内容[/tab]`
 - B 站卡片：`[bilibili-card bvid="BV..."]`
 - 图片网格：`[PicGrid]...[/PicGrid]`
-
-## 部署
-
-1. 本地构建：`cd site && npm run build`
-2. 部署 `site/dist/` 目录到静态服务器即可
-
-如果你用的是带“SPA 回退”的托管（例如某些 CDN 默认把 404 重写到 `index.html`），建议确保静态文件与目录路由都能正确访问（本项目包含 `404.astro`）。
 
