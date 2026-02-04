@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../config/site";
 import Comments from "../components/Comments.astro";
+import { buildTocHtml } from "../utils/toc";
 
 export async function getStaticPaths() {
   const pages = await getCollection("pages");
@@ -13,26 +14,6 @@ const { page } = Astro.props;
 const { Content, headings } = await page.render();
 
 const hasImg = Boolean(page.data.cover);
-
-const escapeHtml = (value: string) =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-
-const buildTocHtml = (items: typeof headings) => {
-  if (!items?.length) return "";
-  const list = items
-    .map((item) => {
-      const text = escapeHtml(item.text);
-      const slug = item.slug;
-      return `<li class="li li-${item.depth}"><a href="#${slug}" id="link-${slug}" class="toc-a">${text}</a></li>`;
-    })
-    .join("");
-  return `<div class="dir"><ul id="toc">${list}</ul><div class="sider"><span class="siderbar"></span></div></div>`;
-};
 
 const tocHtml = buildTocHtml(headings);
 ---

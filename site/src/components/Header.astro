@@ -63,9 +63,9 @@ const aplayerConfig = JSON.stringify({
         <span id="theme-icon" class="icon-moon-inv"></span>
       </button>
     </div>
-    <div style="color:#1d1f20" class="nav header-item left-side-custom-code">&emsp;</div>
+    <div class="nav header-item left-side-custom-code header-spacer">&emsp;</div>
     {aplayer.enabled ? (
-      <div style="text-align:left" id="aplayer" data-aplayer-config={aplayerConfig}>
+      <div class="aplayer-shell" id="aplayer" data-aplayer-config={aplayerConfig}>
         <script is:inline>{`
           window.__aplayerConfig = {
             theme: ${JSON.stringify(aplayer.theme)},
