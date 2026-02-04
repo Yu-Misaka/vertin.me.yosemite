@@ -120,6 +120,13 @@ const filtered = posts.filter((post) => post.data.category === category);
     )}
   </div>
 
+  <nav class="nav main-pager ps-enter-hidden-list" data-js="pager" data-swup-animation>
+    <span class="nav-item-alt">第 1 页 / 共 1 页</span>
+    <div class="nav nav--pager">
+      <i class="icon-record-outline"></i>
+    </div>
+  </nav>
+
   <div class="nav main-lastinfo ps-enter-hidden-list">
     <span class="nav-item-alt" set:html={site.footerInfo} />
   </div>
