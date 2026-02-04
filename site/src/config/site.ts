@@ -1,3 +1,5 @@
+export type PostTitleAfter = "off" | "boldLine" | "wavyLine";
+
 export const site = {
   title: "Vertin - Misaka Foundation",
   titleIndex: "御坂誉",
@@ -23,7 +25,7 @@ export const site = {
     wordCount: true,
     copyright: true
   },
-  postTitleAfter: "boldLine" as const,
+  postTitleAfter: "boldLine" as PostTitleAfter,
   ccLicense: "by-nc-sa" as const,
   themeColor: "yellow" as const,
   navItems: [

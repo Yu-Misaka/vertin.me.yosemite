@@ -9,9 +9,9 @@ const categories = Array.from(
   new Set(
     posts
       .map((post) => post.data.category)
-      .filter(Boolean)
+      .filter((name): name is string => typeof name === "string")
       .map((name) => name.trim())
-      .filter(Boolean) as string[]
+      .filter((name) => name.length > 0)
   )
 )
   .map((name) => ({ name, slug: toSlug(name) }))

@@ -1,8 +1,17 @@
 ---
+import type { CollectionEntry } from "astro:content";
 import { site } from "../config/site";
 import { getExcerpt } from "../utils/excerpt";
 
-const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props;
+type Props = {
+  posts: CollectionEntry<"posts">[];
+  currentPage: number;
+  totalPages: number;
+  prevUrl: string | null;
+  nextUrl: string | null;
+};
+
+const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props as Props;
 ---
 <div class="wrapper">
   {posts.map((post) => {

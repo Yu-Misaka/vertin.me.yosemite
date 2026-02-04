@@ -34,12 +34,15 @@ const pageTitle = title ? `${title} - ${site.title}` : site.title;
       [data-theme="dark"]{--themecolor:${themeTokens.dark.theme};--themehovercolor:${themeTokens.dark.hover};}`}
     />
 
-    <script>
+    <script is:inline>
       window.THEME_URL = "";
     </script>
 
-    <script>
+    <script is:inline data-page-type={pageType}>
       (function () {
+        const scriptEl = document.currentScript;
+        const pageType = scriptEl instanceof HTMLScriptElement ? scriptEl.dataset.pageType : null;
+
         const cookieMatch = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/);
         const cookieTheme = cookieMatch ? cookieMatch[1] : null;
         const localTheme = localStorage.getItem("theme");

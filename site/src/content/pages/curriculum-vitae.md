@@ -2,6 +2,7 @@
 title: "简历 Curriculum Vitae"
 order: 5
 cover: "https://cdn.academe.city/vertin.me/persistent-image/illust3.webp"
+date: 2024-10-28
 ---
 
 [tabs]
