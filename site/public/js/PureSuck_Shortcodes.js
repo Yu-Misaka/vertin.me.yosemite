@@ -9,6 +9,12 @@
     return value.replace(/^<br\s*\/?>/i, '');
   }
 
+  function trimEmptyParagraphs(value) {
+    return value
+      .replace(/^(?:\s*<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>\s*)+/i, '')
+      .replace(/(?:\s*<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>\s*)+$/i, '');
+  }
+
   function normalizeShortcodeLineBreaks(html) {
     return html
       .replace(/\[\/(alert|window|friend-card|collapsible-panel|timeline|tabs)\](<br\s*\/?>)?/gi, '[/$1]')
@@ -202,6 +208,7 @@
       const events = inner.replace(
         /\[timeline-event date="([^"]*)" title="([^"]*)"\]([\s\S]*?)\[\/timeline-event\]/gi,
         function (match, date, title, text) {
+          const body = trimEmptyParagraphs(stripLeadingBreaks(text));
           return (
             '<div class="timeline-item">' +
             '<div class="timeline-dot"></div>' +
@@ -212,9 +219,9 @@
             '<p class="timeline-title">' +
             title +
             '</p>' +
-            '<p class="timeline-description">' +
-            text +
-            '</p>' +
+            '<div class="timeline-description">' +
+            body +
+            '</div>' +
             '</div>' +
             '</div>'
           );

@@ -44,25 +44,25 @@ Exchange program
 
 *Beijing International Center for Mathematical Research*  
 - Seminar:
-&emsp;&emsp; - (Jan 2024)
-&emsp;&emsp;   AI for Mathematics: Mathematics formalization and theorem proving
-&emsp;&emsp; - (Jul 2024)
-&emsp;&emsp;   AI for Mathematics: Formalization on abstract algebra
-&emsp;&emsp;   (**Awarded the special prize and offered chances for further cooperation**)
+  - (Jan 2024)
+    - AI for Mathematics: Mathematics formalization and theorem proving
+  - (Jul 2024)
+    - AI for Mathematics: Formalization on abstract algebra
+    - (**Awarded the special prize and offered chances for further cooperation**)
 - Conference & Workshop:
-&emsp;&emsp; - (Sep 2024)
-&emsp;&emsp;   AI for Mathematics Workshop on Lean, Automated Reasoning and Beyond
-&emsp;&emsp; - (joint with Westlake University, Jan 2025)
-&emsp;&emsp;   Conference on AI for Math and formalization
-&emsp;&emsp; - (May 2025)
-&emsp;&emsp;   RUC&PKU joint Lean Workshop
+  - (Sep 2024)
+    - AI for Mathematics Workshop on Lean, Automated Reasoning and Beyond
+  - (joint with Westlake University, Jan 2025)
+    - Conference on AI for Math and formalization
+  - (May 2025)
+    - RUC&PKU joint Lean Workshop
 - Research projects: (GitHub username: Yu-Misaka)
-&emsp;&emsp; - [*Adding Stacks Project tags (Merged into master)*](https://github.com/leanprover-community/mathlib4/pull/16105)
-&emsp;&emsp; - [*Formalization of Jacobson-Noether theorem (Merged into master)*](https://github.com/leanprover-community/mathlib4/pull/16525)
-&emsp;&emsp; - [*Formalization of filtered and graded ring (Work in progress)*](https://github.com/leanprover-community/mathlib4/pull/26869)
-&emsp;&emsp; - [*Formalizing Koszul Complex (Work in progress)*](https://github.com/mbkybky/KoszulComplex)
+  - [*Adding Stacks Project tags (Merged into master)*](https://github.com/leanprover-community/mathlib4/pull/16105)
+  - [*Formalization of Jacobson-Noether theorem (Merged into master)*](https://github.com/leanprover-community/mathlib4/pull/16525)
+  - [*Formalization of filtered and graded ring (Work in progress)*](https://github.com/leanprover-community/mathlib4/pull/26869)
+  - [*Formalizing Koszul Complex (Work in progress)*](https://github.com/mbkybky/KoszulComplex)
 - (joint program with Ubiquant inc., Mar 2025 - Present)
-  Full-time internship on formalization and AI
+  - Full-time internship on formalization and AI
 
 [/timeline-event]
 
