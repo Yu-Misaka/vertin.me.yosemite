@@ -71,8 +71,7 @@ Exchange program
 [/tab]
 [tab title="Contact"]
 
-&emsp; You can mail to hi@vertin.me
-&emsp; or <b>use the form below</b>.
+&emsp; You can mail to hi@vertin.me or <b>use the form below</b>.
 
 [/tab]
 

@@ -30,6 +30,7 @@ export const site = {
     { label: "首页", href: "/", order: 0 },
     { label: "归墟 Archives", href: "/archives", order: 2 }
   ],
+  archivesCover: "https://cdn.academe.city/vertin.me/persistent-image/image1_waifu2x_2560x1440_3n.webp",
   comments: {
     provider: "twikoo",
     envId: "https://comment.academe.city"

@@ -4,6 +4,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../config/site";
 
 const posts = await getCollection("posts", ({ data }) => !data.draft);
+const cover = site.archivesCover;
+const hasImg = Boolean(cover);
 const countChineseChars = (value: string) => {
   const matches = value.match(/[\u4e00-\u9fa5]/g);
   return matches ? matches.length : value.replace(/\s+/g, "").length;
@@ -42,9 +44,9 @@ const formatChars = (value: number) => {
 ---
 <BaseLayout pageType="page" navCurrent="/archives" title="归档">
   <div class="wrapper">
-    <article class="post post--text post--index main-item">
+    <article class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item`}>
       <div class="post-inner">
-        <header class="post-item post-header">
+        <header class={`post-item post-header ${hasImg ? "no-bg" : ""}`}>
           <div class="wrapper post-wrapper">
             <div class="avatar post-author">
               <img src={site.author.avatar} alt="作者头像" class="avatar-item avatar-img" loading="lazy" decoding="async" />
@@ -52,6 +54,12 @@ const formatChars = (value: number) => {
             </div>
           </div>
         </header>
+
+        {hasImg ? (
+          <figure class="post-media">
+            <img itemprop="image" src={cover} alt="头图" loading="eager" decoding="async" />
+          </figure>
+        ) : null}
 
         <section class="post-item post-body">
           <div class="wrapper post-wrapper">

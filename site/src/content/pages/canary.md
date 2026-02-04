@@ -1,6 +1,8 @@
 ---
 title: "金丝雀 Canary"
 order: 3
+date: 2024-10-29
+cover: "https://cdn.academe.city/vertin.me/persistent-image/2023-03-05%20%283%29.webp"
 ---
 
-这里是金丝雀 Canary 页面内容。
+[window type="red" title="提示⚠"]建设中...Work In Progress...[/window]
