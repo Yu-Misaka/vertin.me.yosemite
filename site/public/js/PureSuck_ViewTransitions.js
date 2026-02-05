@@ -312,6 +312,15 @@
             return;
         }
         if (pageType === PageType.LIST) {
+            // 如果是从文章页返回列表页（通过导航链接），不要设置共享元素
+            // 因为从完整文章缩小到卡片的 morph 动画效果不好
+            // 只有从列表页点击卡片进入文章时才使用共享元素动画
+            if (STATE.lastPost.fromSingle) {
+                // 从文章页返回，清除共享元素并重置状态
+                STATE.lastPost.fromSingle = false;
+                clearAllVTNames();
+                return;
+            }
             const lastKey = STATE.lastPost.key || history.state?.lastPostKey;
             if (lastKey) {
                 const card = findIndexPostCardById(lastKey);
