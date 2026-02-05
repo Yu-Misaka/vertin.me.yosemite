@@ -612,15 +612,20 @@ const initializeStickyTOC = (() => {
     
     // ✅ 重置函数：View Transitions 切换时调用
     function reset() {
+        if (state.observer) {
+            state.observer.disconnect();
+            state.observer = null;
+        }
+        // 移除旧的 sentinel 元素
+        if (state.sentinel && state.sentinel.parentNode) {
+            state.sentinel.parentNode.removeChild(state.sentinel);
+            state.sentinel = null;
+        }
         state.section = null;
         state.sidebar = null;
         state.threshold = 0;
         state.bound = false;
         state.heightCache = new WeakMap();
-        if (state.observer) {
-            state.observer.disconnect();
-            state.observer = null;
-        }
     }
     
     // 暴露重置函数供 View Transitions 使用
