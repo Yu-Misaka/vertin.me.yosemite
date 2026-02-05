@@ -44,15 +44,18 @@
       return;
     }
     
-    // 清空容器并重新初始化
+    // 清空容器并标记路径
     container.innerHTML = '';
     container.dataset.twikooPath = path;
 
     ensureTwikoo().then(function (twikoo) {
       if (!twikoo) return;
-      // 再次检查容器是否存在（可能在异步等待期间页面已切换）
+      
+      // 再次检查：容器是否存在、路径是否仍然匹配（避免快速导航的竞态条件）
       var currentContainer = document.getElementById('tcomment');
+      var currentPath = window.location.pathname;
       if (!currentContainer || currentContainer !== container) return;
+      if (currentPath !== path) return;
       
       twikoo.init({
         envId: envId,

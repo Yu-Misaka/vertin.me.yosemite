@@ -347,7 +347,7 @@
         let savedTheme = cookieTheme || localTheme || 'auto';
         
         if (savedTheme === 'auto') {
-            savedTheme = window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+            savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
         
         const currentTheme = root.getAttribute('data-theme');
