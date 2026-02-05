@@ -3,7 +3,9 @@
 
   var TWIKOO_SRC = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js';
   var twikooLoading = null;
+  // 初始化计数器：使用模运算避免溢出（实际上用户在单个会话中不太可能导航超过1亿次）
   var initCounter = 0;
+  var MAX_COUNTER = 100000000;
 
   function getEnvId() {
     var root = document.getElementById('comments');
@@ -41,11 +43,14 @@
     var path = window.location.pathname;
     
     // 每次初始化使用唯一ID，避免 Twikoo 内部状态冲突
-    initCounter++;
+    initCounter = (initCounter + 1) % MAX_COUNTER;
     var uniqueId = 'tcomment-' + initCounter;
     
-    // 创建新的子容器
-    container.innerHTML = '<div id="' + uniqueId + '"></div>';
+    // 使用 DOM API 创建子容器（避免 innerHTML XSS 风险）
+    container.innerHTML = '';
+    var subContainer = document.createElement('div');
+    subContainer.id = uniqueId;
+    container.appendChild(subContainer);
     
     var thisInitCounter = initCounter;
 
