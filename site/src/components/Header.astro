@@ -65,7 +65,7 @@ const aplayerConfig = JSON.stringify({
     </div>
     <div class="nav header-item left-side-custom-code header-spacer">&emsp;</div>
     {aplayer.enabled ? (
-      <div class="aplayer-shell" id="aplayer" data-aplayer-config={aplayerConfig}>
+      <div class="aplayer-shell" id="aplayer" data-aplayer-config={aplayerConfig} transition:persist="aplayer">
         <script is:inline>{`
           window.__aplayerConfig = {
             theme: ${JSON.stringify(aplayer.theme)},

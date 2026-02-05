@@ -609,6 +609,29 @@ const initializeStickyTOC = (() => {
         resizeTimer: 0,  // ✅ 防抖定时器
         heightCache: new WeakMap()  // ✅ 高度缓存
     };
+    
+    // ✅ 重置函数：View Transitions 切换时调用
+    function reset() {
+        if (state.observer) {
+            state.observer.disconnect();
+            state.observer = null;
+        }
+        // 移除旧的 sentinel 元素
+        if (state.sentinel && state.sentinel.parentNode) {
+            state.sentinel.parentNode.removeChild(state.sentinel);
+            state.sentinel = null;
+        }
+        state.section = null;
+        state.sidebar = null;
+        state.threshold = 0;
+        state.bound = false;
+        state.heightCache = new WeakMap();
+    }
+    
+    // 暴露重置函数供 View Transitions 使用
+    // 使用 __ps 前缀表示这是 PureSuck 模块的内部 API，
+    // 虽然暴露在 window 上，但不建议外部直接调用
+    window.__psStickyTocReset = reset;
 
     // ✅ 同步计算阈值（使用缓存减少重排，但不延迟）
     function updateThreshold() {
@@ -993,14 +1016,22 @@ document.addEventListener('DOMContentLoaded', function () {
         setTheme(newTheme);
     }
 
+    function getSavedTheme() {
+        const cookieTheme = getCookie('theme');
+        return cookieTheme || localStorage.getItem('theme') || 'auto';
+    }
+
+    function syncThemeUI() {
+        const savedTheme = getSavedTheme();
+        applyThemeAttribute(getEffectiveTheme(savedTheme));
+        updateIcon(savedTheme);
+    }
+
     /**
      * 初始化主题系统
      */
     function initTheme() {
-        // 优先读取 Cookie（跨站同步）
-        const cookieTheme = getCookie('theme');
-        const savedTheme = cookieTheme || localStorage.getItem('theme') || 'auto';
-        applyTheme(savedTheme);
+        applyTheme(getSavedTheme());
     }
 
     /**
@@ -1030,6 +1061,9 @@ document.addEventListener('DOMContentLoaded', function () {
         initTheme();
         watchSystemTheme();
     }
+
+    document.addEventListener('astro:after-swap', syncThemeUI);
+    document.addEventListener('astro:page-load', syncThemeUI);
 })();
 
 /**
@@ -1178,7 +1212,9 @@ const NavIndicator = (() => {
      * 更新指示器（供 Swup 调用）
      */
     function update() {
-        if (!navContainer) {
+        if (!navContainer || !document.contains(navContainer)) {
+            navContainer = null;
+            indicator = null;
             init();
             return;
         }

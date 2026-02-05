@@ -6,6 +6,10 @@ import rehypeWrapTables from "./src/rehype/rehype-wrap-tables.mjs";
 export default defineConfig({
   integrations: [vue()],
   output: "static",
+  prefetch: {
+    prefetchAll: true,
+    defaultStrategy: 'viewport'
+  },
   markdown: {
     gfm: false,
     remarkPlugins: [remarkGfmNoAutolink],
