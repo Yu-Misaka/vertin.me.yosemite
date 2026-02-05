@@ -27,6 +27,7 @@
         }
     };
 
+
     // ==================== View Transitions 配置 ====================
     const VT = {
         markerAttr: 'data-ps-vt-name',
@@ -397,6 +398,8 @@
         // 滚动动画
         scroll: {
             duration: 550,
+            enterTopDuration: 200,
+            returnDuration: 1000,
             easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
         }
     };
@@ -475,6 +478,16 @@
             'ps-list-enter',
             'ps-pre-enter'
         );
+        const swupRoot = getSwupRoot();
+        swupRoot.querySelectorAll('.ps-enter-hidden-list, .ps-enter-hidden-post, .ps-enter-hidden-page-card, .ps-enter-hidden-page-inner')
+            .forEach(el => {
+                el.classList.remove(
+                    'ps-enter-hidden-list',
+                    'ps-enter-hidden-post',
+                    'ps-enter-hidden-page-card',
+                    'ps-enter-hidden-page-inner'
+                );
+            });
         // ★ ps-vt-mode 延迟移除，避免 content-visibility 恢复触发 reflow 阻塞 VT 动画
         // VT 动画完成后再移除，让 reflow 在动画结束后发生
         const vtDuration = VT.duration + 50; // 380ms + 50ms 缓冲
@@ -909,11 +922,16 @@
      * 平滑滚动到顶部
      * @param {boolean} force - 是否强制滚动
      */
-    function smoothScrollToTop(force = false) {
-        if (!force && window.scrollY < 100) return;
+    function smoothScrollTo(targetY, force = false, durationOverride = null) {
+        if (prefersReducedMotion()) {
+            window.scrollTo(0, targetY);
+            return;
+        }
+        if (!force && Math.abs(window.scrollY - targetY) < 1) return;
 
         const startY = window.scrollY;
-        const duration = ANIM.scroll.duration;
+        const delta = targetY - startY;
+        const duration = typeof durationOverride === 'number' ? durationOverride : ANIM.scroll.duration;
         const startTime = performance.now();
 
         function animateScroll(currentTime) {
@@ -922,7 +940,7 @@
 
             // 使用 ease-out 缓动
             const eased = 1 - Math.pow(1 - progress, 3);
-            window.scrollTo(0, startY * (1 - eased));
+            window.scrollTo(0, startY + delta * eased);
 
             if (progress < 1) {
                 requestAnimationFrame(animateScroll);
@@ -930,6 +948,11 @@
         }
 
         requestAnimationFrame(animateScroll);
+    }
+
+    function smoothScrollToTop(force = false, durationOverride = null) {
+        if (!force && window.scrollY < 100) return;
+        smoothScrollTo(0, true, durationOverride);
     }
 
     /**
@@ -1242,7 +1265,8 @@
                 const rect = el.getBoundingClientRect();
                 if (rect.bottom < 0 || rect.top > window.innerHeight) {
                     requestAnimationFrame(() => {
-                        el.scrollIntoView({ block: 'center', inline: 'nearest' });
+                        const targetY = window.scrollY + rect.top - (window.innerHeight - rect.height) / 2;
+                        smoothScrollTo(clampScrollY(targetY), true, ANIM.scroll.returnDuration);
                     });
                 }
             });
@@ -1257,8 +1281,8 @@
         const cachedY = scrollPlugin?.getCachedScrollPositions?.(url)?.window?.top;
 
         if (typeof cachedY === 'number') {
-            window.scrollTo(0, cachedY);
-            queueMicrotask(() => window.scrollTo(0, cachedY));
+            smoothScrollTo(clampScrollY(cachedY), true, ANIM.scroll.returnDuration);
+            queueMicrotask(() => smoothScrollTo(clampScrollY(cachedY), true, ANIM.scroll.returnDuration));
         }
 
         const card = findIndexPostCardById(listPostKey);
@@ -1680,6 +1704,11 @@
                 window.scrollTo(0, clampScrollY(STATE.lastPost.alignTargetY));
             }
 
+            if (isReturningFromPost) {
+                if (!visit.scroll) visit.scroll = {};
+                visit.scroll.reset = false;
+            }
+
             if (useVT) {
                 // ★ 确保旧页面元素在 VT 开始前已设置 viewTransitionName
                 ensureOldPageViewTransitionName(fromType);
@@ -1729,12 +1758,16 @@
                 window.scrollTo(0, 0);
             } else if (wasListPage && isListPage) {
                 // 列表分页：平滑滚动到顶部
-                smoothScrollToTop(true);
+                smoothScrollToTop(true, ANIM.scroll.duration);
             }
 
             if (toType === PageType.POST && STATE.lastPost.alignTargetY !== null) {
                 window.scrollTo(0, clampScrollY(STATE.lastPost.alignTargetY));
                 STATE.lastPost.alignTargetY = null;
+                const vtDelay = VT.duration + 10;
+                setTimeout(() => {
+                    smoothScrollToTop(true, ANIM.scroll.enterTopDuration);
+                }, vtDelay);
             }
 
             // 标记新元素

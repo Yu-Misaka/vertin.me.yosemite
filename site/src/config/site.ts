@@ -13,7 +13,7 @@ export const site = {
   footerInfo:
     "<small><p><b>美丽新世界</b><br><a href=\"https://misakafund.org\">御坂基金会</a>授权</p></small>",
   footerScript: "",
-  postsPerPage: 4,
+  postsPerPage: 5,
   leftSideCustomCode:
     "<img src=\"https://cdn.academe.city/vertin.me/persistent-image/2252397-black.webp\" />",
   show: {

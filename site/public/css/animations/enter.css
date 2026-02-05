@@ -14,6 +14,27 @@
  * 4. GPU 加速：使用 transform: translate3d 和 will-change
  */
 
+/* ==================== 进入前隐藏（Swup） ==================== */
+html.ps-enter-active .ps-enter-hidden-list {
+	opacity: 0;
+	transform: none;
+}
+
+html.ps-enter-active .ps-enter-hidden-post {
+	opacity: 0;
+	transform: translate3d(0, var(--ps-anim-translate-small), 0);
+}
+
+html.ps-enter-active .ps-enter-hidden-page-card {
+	opacity: 0;
+	transform: translate3d(0, 40px, 0) scale(0.98);
+}
+
+html.ps-enter-active .ps-enter-hidden-page-inner {
+	opacity: 0;
+	transform: translate3d(0, 16px, 0);
+}
+
 /* ==================== 列表页进入动画 ==================== */
 
 /*
@@ -23,12 +44,12 @@
 html.ps-list-enter .post.post--index,
 html.ps-list-enter .archive-title {
 	opacity: 0;
-	transform: translate3d(0, var(--ps-anim-translate-large), 0);
+	transform: none;
 }
 html.ps-list-enter .main-pager,
 html.ps-list-enter .main-lastinfo {
 	opacity: 0;
-	transform: translate3d(0, var(--ps-anim-translate-medium), 0);
+	transform: none;
 }
 
 /* ==================== 文章页进入动画 ==================== */
