@@ -31,6 +31,7 @@
     const VT = {
         markerAttr: 'data-ps-vt-name',
         duration: 380,
+        bufferMs: 50,         // 动画完成后的缓冲时间
         markerSelector: '[data-ps-vt-name]'
     };
 
@@ -43,7 +44,10 @@
                 card: { duration: 380, y: 40, scale: 0.98 },
                 inner: { duration: 380, stagger: 40, y: 16, maxItems: 24 }
             }
-        }
+        },
+        // 动画清理延迟：最长动画 + 余量
+        cleanupDelay: 600,
+        initialCleanupDelay: 1000
     };
 
     // ==================== 工具函数 ====================
@@ -189,7 +193,7 @@
         setTimeout(() => {
             document.documentElement.classList.remove('ps-vt-mode');
             getSwupRoot().classList.remove('ps-vt-mode');
-        }, VT.duration + 50);
+        }, VT.duration + VT.bufferMs);
     }
 
     // ==================== 收集动画目标 ====================
@@ -378,7 +382,7 @@
         setTimeout(() => {
             html.classList.remove(cls);
             cleanupAnimationClasses();
-        }, 600);
+        }, ANIM.cleanupDelay);
     }
 
     function runExit() {
@@ -488,7 +492,7 @@
                 });
             });
             
-            setTimeout(() => cleanupAnimationClasses(), 1000);
+            setTimeout(() => cleanupAnimationClasses(), ANIM.initialCleanupDelay);
         } else {
             runEnterAnimation(pageType, false);
         }
