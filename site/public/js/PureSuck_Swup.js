@@ -22,7 +22,8 @@
         },
         lastPost: {
             key: null,
-            fromSingle: false
+            fromSingle: false,
+            alignTargetY: null
         }
     };
 
@@ -946,6 +947,36 @@
         }
     }
 
+    function clampScrollY(value) {
+        const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        return Math.min(Math.max(0, value), max);
+    }
+
+    function resolveCssPxVar(varName) {
+        const root = document.documentElement;
+        const raw = getComputedStyle(root).getPropertyValue(varName).trim();
+        if (!raw) return null;
+
+        const probe = document.createElement('div');
+        probe.style.position = 'absolute';
+        probe.style.visibility = 'hidden';
+        probe.style.pointerEvents = 'none';
+        probe.style.top = `var(${varName})`;
+        root.appendChild(probe);
+        const computed = parseFloat(getComputedStyle(probe).top);
+        root.removeChild(probe);
+        return Number.isFinite(computed) ? computed : null;
+    }
+
+    function resolvePostAlignGapPx() {
+        const fromVar = resolveCssPxVar('--ps-post-align-gap');
+        if (typeof fromVar === 'number') return fromVar;
+
+        const main = document.querySelector('main.main') || document.querySelector('main') || document.body;
+        const padTop = parseFloat(getComputedStyle(main).paddingTop || '0');
+        return Number.isFinite(padTop) ? padTop : 0;
+    }
+
     // ==================== 工具函数 ====================
     /**
      * 检查是否为有效的鼠标左键点击事件
@@ -1601,6 +1632,9 @@
             if (!postKey) return;
 
             rememberLastPostKey(postKey);
+            const rect = postCard.getBoundingClientRect();
+            const gapPx = resolvePostAlignGapPx();
+            STATE.lastPost.alignTargetY = window.scrollY + rect.top - gapPx;
             applyPostSharedElementName(postCard, postKey);
 
             // ★ VT 动画前预加载卡片内的图片（确保动画流畅）
@@ -1638,6 +1672,13 @@
 
             // 列表→文章（有点击的卡片）或 文章→列表（有记录的 key）才使用 VT
             const useVT = isClickingPostFromList || isReturningFromPost;
+            const hasAlignTarget = typeof STATE.lastPost.alignTargetY === 'number';
+
+            if (isClickingPostFromList && hasAlignTarget) {
+                if (!visit.scroll) visit.scroll = {};
+                visit.scroll.reset = false;
+                window.scrollTo(0, clampScrollY(STATE.lastPost.alignTargetY));
+            }
 
             if (useVT) {
                 // ★ 确保旧页面元素在 VT 开始前已设置 viewTransitionName
@@ -1691,6 +1732,11 @@
                 smoothScrollToTop(true);
             }
 
+            if (toType === PageType.POST && STATE.lastPost.alignTargetY !== null) {
+                window.scrollTo(0, clampScrollY(STATE.lastPost.alignTargetY));
+                STATE.lastPost.alignTargetY = null;
+            }
+
             // 标记新元素
             scheduleIdleTask(() => {
                 markAnimationElements(getSwupRoot());
@@ -1734,6 +1780,7 @@
         // ========== 动画流程：visit:end ==========
         swup.hooks.on('visit:end', () => {
             STATE.isSwupNavigating = false;
+            STATE.lastPost.alignTargetY = null;
 
             // 使用 requestIdleCallback 在浏览器空闲时清理，避免阻塞
             scheduleIdleTask(() => {
