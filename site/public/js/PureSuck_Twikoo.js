@@ -109,12 +109,8 @@
 
   window.__initTwikoo = initTwikoo;
 
-  document.addEventListener('DOMContentLoaded', function () {
-    initTwikoo();
-  });
-
-  // 使用 astro:page-load 作为唯一的导航事件监听器
-  // astro:page-load 在初始页面加载和每次导航后都会触发
+  // 只使用 astro:page-load，它在初始页面加载和每次导航后都会触发
+  // 不再需要 DOMContentLoaded，因为 astro:page-load 已经覆盖了这种情况
   document.addEventListener('astro:page-load', function () {
     // 重置路径追踪，因为这是新页面
     lastInitPath = null;
