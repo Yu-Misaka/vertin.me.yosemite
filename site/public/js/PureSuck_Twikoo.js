@@ -115,6 +115,11 @@
     // 重置路径追踪，因为这是新页面
     lastInitPath = null;
     isInitializing = false;
-    initTwikoo();
+    
+    // 使用 requestAnimationFrame 确保 DOM 已完全渲染
+    // 这可以帮助避免 View Transitions 动画期间的初始化问题
+    requestAnimationFrame(function() {
+      initTwikoo();
+    });
   });
 })();
