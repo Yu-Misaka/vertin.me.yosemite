@@ -1212,7 +1212,9 @@ const NavIndicator = (() => {
      * 更新指示器（供 Swup 调用）
      */
     function update() {
-        if (!navContainer) {
+        if (!navContainer || !document.contains(navContainer)) {
+            navContainer = null;
+            indicator = null;
             init();
             return;
         }
