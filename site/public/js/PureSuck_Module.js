@@ -623,7 +623,9 @@ const initializeStickyTOC = (() => {
         }
     }
     
-    // 暴露重置函数
+    // 暴露重置函数供 View Transitions 使用
+    // 使用 __ps 前缀表示这是 PureSuck 模块的内部 API，
+    // 虽然暴露在 window 上，但不建议外部直接调用
     window.__psStickyTocReset = reset;
 
     // ✅ 同步计算阈值（使用缓存减少重排，但不延迟）

@@ -47,7 +47,10 @@
         },
         // 动画清理延迟：最长动画 + 余量
         cleanupDelay: 600,
-        initialCleanupDelay: 1000
+        initialCleanupDelay: 1000,
+        // 模块初始化后的 sticky 状态同步延迟
+        // 需要等待其他模块（如 PureSuck_Shortcodes.js）完成 sticky TOC 初始化
+        stickyResetDelay: 100
     };
 
     // ==================== 工具函数 ====================
@@ -501,13 +504,14 @@
         runModuleInit();
         
         // 在所有初始化完成后，确保 sticky 状态正确
-        // 使用 setTimeout 确保在其他模块初始化后执行
+        // 使用 setTimeout 确保在其他模块（如 PureSuck_Shortcodes.js）初始化后执行
+        // 延迟时间定义在 ANIM.stickyResetDelay 中，便于维护
         setTimeout(() => {
             const tocSection = document.querySelector('.toc-section');
             if (tocSection && window.scrollY === 0) {
                 tocSection.classList.remove('sticky');
             }
-        }, 100);
+        }, ANIM.stickyResetDelay);
     });
 
     document.addEventListener('astro:page-load', () => {
