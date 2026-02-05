@@ -491,8 +491,23 @@
     document.addEventListener('astro:after-swap', () => {
         // 恢复主题（以防万一）
         restoreTheme();
+        
+        // 重置 sticky TOC 模块的 bound 状态，以便完全重新初始化
+        if (typeof window.__psStickyTocReset === 'function') {
+            window.__psStickyTocReset();
+        }
+        
         runEnter();
         runModuleInit();
+        
+        // 在所有初始化完成后，确保 sticky 状态正确
+        // 使用 setTimeout 确保在其他模块初始化后执行
+        setTimeout(() => {
+            const tocSection = document.querySelector('.toc-section');
+            if (tocSection && window.scrollY === 0) {
+                tocSection.classList.remove('sticky');
+            }
+        }, 100);
     });
 
     document.addEventListener('astro:page-load', () => {

@@ -609,6 +609,22 @@ const initializeStickyTOC = (() => {
         resizeTimer: 0,  // ✅ 防抖定时器
         heightCache: new WeakMap()  // ✅ 高度缓存
     };
+    
+    // ✅ 重置函数：View Transitions 切换时调用
+    function reset() {
+        state.section = null;
+        state.sidebar = null;
+        state.threshold = 0;
+        state.bound = false;
+        state.heightCache = new WeakMap();
+        if (state.observer) {
+            state.observer.disconnect();
+            state.observer = null;
+        }
+    }
+    
+    // 暴露重置函数
+    window.__psStickyTocReset = reset;
 
     // ✅ 同步计算阈值（使用缓存减少重排，但不延迟）
     function updateThreshold() {
