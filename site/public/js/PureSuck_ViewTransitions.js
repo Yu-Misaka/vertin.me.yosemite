@@ -338,6 +338,24 @@
     }
 
     // ==================== 主题切换 ====================
+    function restoreTheme() {
+        const root = document.documentElement;
+        // 尝试从 cookie 或 localStorage 恢复主题
+        const cookieMatch = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/);
+        const cookieTheme = cookieMatch ? cookieMatch[1] : null;
+        const localTheme = localStorage.getItem('theme');
+        let savedTheme = cookieTheme || localTheme || 'auto';
+        
+        if (savedTheme === 'auto') {
+            savedTheme = window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+        }
+        
+        const currentTheme = root.getAttribute('data-theme');
+        if (currentTheme !== savedTheme) {
+            root.setAttribute('data-theme', savedTheme);
+        }
+    }
+
     function ensureThemeToggle() {
         if (typeof window.toggleTheme === 'function') return;
         window.toggleTheme = function () {
@@ -463,7 +481,16 @@
         runExit();
     });
 
+    // 在 DOM 交换前，确保新文档继承当前主题
+    document.addEventListener('astro:before-swap', (event) => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        // 将当前主题应用到新文档
+        event.newDocument.documentElement.setAttribute('data-theme', currentTheme);
+    });
+
     document.addEventListener('astro:after-swap', () => {
+        // 恢复主题（以防万一）
+        restoreTheme();
         runEnter();
         runModuleInit();
     });

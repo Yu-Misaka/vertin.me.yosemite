@@ -37,11 +37,23 @@
     var container = document.getElementById('tcomment');
     if (!envId || !container) return;
 
+    var path = window.location.pathname;
+    
+    // 如果容器已经初始化过相同路径的评论，跳过
+    if (container.dataset.twikooPath === path && container.children.length > 0) {
+      return;
+    }
+    
+    // 清空容器并重新初始化
+    container.innerHTML = '';
+    container.dataset.twikooPath = path;
+
     ensureTwikoo().then(function (twikoo) {
       if (!twikoo) return;
-      var path = window.location.pathname;
-      if (container.dataset.twikooPath === path) return;
-      container.dataset.twikooPath = path;
+      // 再次检查容器是否存在（可能在异步等待期间页面已切换）
+      var currentContainer = document.getElementById('tcomment');
+      if (!currentContainer || currentContainer !== container) return;
+      
       twikoo.init({
         envId: envId,
         el: '#tcomment',
