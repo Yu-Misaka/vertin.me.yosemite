@@ -366,9 +366,9 @@
   function applyLazyLoad(root) {
     const images = root.querySelectorAll('img');
     images.forEach(function (img) {
+      if (img.classList.contains('friends-card-avatar')) return;
       const isExcluded =
         img.classList.contains('no-zoom') ||
-        img.classList.contains('friends-card-avatar') ||
         img.id === 'no-zoom';
 
       if (!isExcluded && !img.hasAttribute('data-zoomable')) {
