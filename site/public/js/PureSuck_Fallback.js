@@ -32,6 +32,6 @@
     init();
   }
 
-  document.addEventListener('swup:page:view', init);
-  document.addEventListener('swup:contentReplaced', init);
+  document.addEventListener('astro:page-load', init);
+  document.addEventListener('astro:after-swap', init);
 })();

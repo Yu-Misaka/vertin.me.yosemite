@@ -447,11 +447,7 @@
     initialize(document);
   });
 
-  document.addEventListener('swup:contentReplaced', function () {
-    initialize(document);
-  });
-
-  document.addEventListener('swup:page:view', function () {
+  document.addEventListener('astro:page-load', function () {
     initialize(document);
   });
 

@@ -319,6 +319,5 @@
 
   document.addEventListener('DOMContentLoaded', initSearchPage);
   document.addEventListener('astro:after-swap', initSearchPage);
-  document.addEventListener('swup:contentReplaced', initSearchPage);
-  document.addEventListener('swup:page:view', initSearchPage);
+  document.addEventListener('astro:page-load', initSearchPage);
 })();

@@ -63,12 +63,4 @@
   document.addEventListener('astro:after-swap', function () {
     initTwikoo();
   });
-
-  document.addEventListener('swup:contentReplaced', function () {
-    initTwikoo();
-  });
-
-  document.addEventListener('swup:page:view', function () {
-    initTwikoo();
-  });
 })();
