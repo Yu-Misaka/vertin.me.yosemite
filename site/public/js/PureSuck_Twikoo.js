@@ -3,6 +3,7 @@
 
   var TWIKOO_SRC = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js';
   var twikooLoading = null;
+  var initCounter = 0;
 
   function getEnvId() {
     var root = document.getElementById('comments');
@@ -39,27 +40,32 @@
 
     var path = window.location.pathname;
     
-    // 如果容器已经初始化过相同路径的评论，跳过
-    if (container.dataset.twikooPath === path && container.children.length > 0) {
-      return;
-    }
+    // 每次初始化使用唯一ID，避免 Twikoo 内部状态冲突
+    initCounter++;
+    var uniqueId = 'tcomment-' + initCounter;
     
-    // 清空容器并标记路径
-    container.innerHTML = '';
-    container.dataset.twikooPath = path;
+    // 创建新的子容器
+    container.innerHTML = '<div id="' + uniqueId + '"></div>';
+    
+    var thisInitCounter = initCounter;
 
     ensureTwikoo().then(function (twikoo) {
       if (!twikoo) return;
       
-      // 再次检查：容器是否存在、路径是否仍然匹配（避免快速导航的竞态条件）
-      var currentContainer = document.getElementById('tcomment');
+      // 验证：计数器是否仍然匹配（避免竞态条件）
+      if (thisInitCounter !== initCounter) return;
+      
+      // 验证：路径是否仍然匹配
       var currentPath = window.location.pathname;
-      if (!currentContainer || currentContainer !== container) return;
       if (currentPath !== path) return;
+      
+      // 验证：容器是否存在
+      var targetEl = document.getElementById(uniqueId);
+      if (!targetEl) return;
       
       twikoo.init({
         envId: envId,
-        el: '#tcomment',
+        el: '#' + uniqueId,
         path: path
       });
     });
