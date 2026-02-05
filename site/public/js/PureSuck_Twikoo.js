@@ -45,16 +45,10 @@
 
     var path = window.location.pathname;
     
-    // 防止同一路径重复初始化（astro:after-swap 和 astro:page-load 可能都会触发）
-    if (lastInitPath === path && !isInitializing) {
-      // 如果已经初始化过且容器有内容，跳过
-      if (container.children.length > 0) {
-        return;
-      }
-    }
-    
-    // 如果正在初始化中，跳过
-    if (isInitializing && lastInitPath === path) {
+    // 防止同一路径重复初始化：
+    // 1. 如果正在初始化中，或者
+    // 2. 如果已经初始化过且容器有内容
+    if (lastInitPath === path && (isInitializing || container.children.length > 0)) {
       return;
     }
     
@@ -74,27 +68,41 @@
     var thisInitCounter = initCounter;
 
     ensureTwikoo().then(function (twikoo) {
-      isInitializing = false;
-      
-      if (!twikoo) return;
+      if (!twikoo) {
+        isInitializing = false;
+        return;
+      }
       
       // 验证：计数器是否仍然匹配（避免竞态条件）
-      if (thisInitCounter !== initCounter) return;
+      if (thisInitCounter !== initCounter) {
+        isInitializing = false;
+        return;
+      }
       
       // 验证：路径是否仍然匹配
       var currentPath = window.location.pathname;
-      if (currentPath !== path) return;
+      if (currentPath !== path) {
+        isInitializing = false;
+        return;
+      }
       
       // 验证：容器是否存在
       var targetEl = document.getElementById(uniqueId);
-      if (!targetEl) return;
+      if (!targetEl) {
+        isInitializing = false;
+        return;
+      }
       
       twikoo.init({
         envId: envId,
         el: '#' + uniqueId,
         path: path
       });
-    }).catch(function() {
+      
+      // twikoo.init 完成后重置标记
+      isInitializing = false;
+    }).catch(function(error) {
+      console.error('Twikoo initialization failed:', error);
       isInitializing = false;
     });
   }
