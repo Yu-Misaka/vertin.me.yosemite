@@ -1016,14 +1016,22 @@ document.addEventListener('DOMContentLoaded', function () {
         setTheme(newTheme);
     }
 
+    function getSavedTheme() {
+        const cookieTheme = getCookie('theme');
+        return cookieTheme || localStorage.getItem('theme') || 'auto';
+    }
+
+    function syncThemeUI() {
+        const savedTheme = getSavedTheme();
+        applyThemeAttribute(getEffectiveTheme(savedTheme));
+        updateIcon(savedTheme);
+    }
+
     /**
      * 初始化主题系统
      */
     function initTheme() {
-        // 优先读取 Cookie（跨站同步）
-        const cookieTheme = getCookie('theme');
-        const savedTheme = cookieTheme || localStorage.getItem('theme') || 'auto';
-        applyTheme(savedTheme);
+        applyTheme(getSavedTheme());
     }
 
     /**
@@ -1053,6 +1061,9 @@ document.addEventListener('DOMContentLoaded', function () {
         initTheme();
         watchSystemTheme();
     }
+
+    document.addEventListener('astro:after-swap', syncThemeUI);
+    document.addEventListener('astro:page-load', syncThemeUI);
 })();
 
 /**
