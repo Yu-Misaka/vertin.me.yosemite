@@ -9,7 +9,7 @@
   'use strict';
 
   // ==================== Shared Configuration ====================
-  var TWIKOO_SRC = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js';
+  var TWIKOO_SRC = 'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/twikoo/1.6.44/twikoo.all.min.js';
 
   // ==================== Shared Utilities ====================
   
