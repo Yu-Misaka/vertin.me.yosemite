@@ -33,40 +33,22 @@
             img.removeAttribute('data-lazy-src');
             img.classList.add('lazy-loaded');
 
-            // 处理 srcset
-            const srcset = img.dataset.lazySrcset;
-
-            let resolved = false;
-            const onImageReady = () => {
-                if (resolved) return;
-                resolved = true;
-                // 清除事件处理器以避免重复触发
-                img.onload = null;
-                img.onerror = null;
-                // 绑定 medium-zoom
-                if (img.hasAttribute('data-zoomable') && window.mediumZoomInstance) {
-                    window.mediumZoomInstance.attach(img);
-                }
-                resolve(img);
-            };
-
-            // 设置加载完成的回调
-            img.onload = onImageReady;
-            // 错误时也调用 onImageReady 以确保状态一致（浏览器会显示损坏图片图标）
-            img.onerror = onImageReady;
-
             // 设置真实 src
             img.src = src;
 
+            // 处理 srcset
+            const srcset = img.dataset.lazySrcset;
             if (srcset) {
                 img.srcset = srcset;
                 img.removeAttribute('data-lazy-srcset');
             }
 
-            // 如果图片已经在缓存中加载完成，立即触发回调
-            if (img.complete) {
-                onImageReady();
+            // 绑定 medium-zoom
+            if (img.hasAttribute('data-zoomable') && window.mediumZoomInstance) {
+                window.mediumZoomInstance.attach(img);
             }
+
+            resolve(img);
         });
     }
 
