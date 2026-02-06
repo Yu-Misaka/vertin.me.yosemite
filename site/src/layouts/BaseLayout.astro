@@ -85,6 +85,15 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
     <link rel="stylesheet" href="/css/APlayer.min.css" />
     <link rel="stylesheet" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/KaTeX/0.16.9/katex.min.css" />
 
+    <!-- medium-zoom CSS (included statically to persist across view transitions) -->
+    <style is:inline>
+      .medium-zoom-overlay{position:fixed;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity .3s;will-change:opacity}
+      .medium-zoom--opened .medium-zoom-overlay{cursor:pointer;cursor:zoom-out;opacity:1}
+      .medium-zoom-image{cursor:pointer;cursor:zoom-in;transition:transform .3s cubic-bezier(.2,0,.2,1)!important}
+      .medium-zoom-image--hidden{visibility:hidden}
+      .medium-zoom-image--opened{position:relative;cursor:pointer;cursor:zoom-out;will-change:transform}
+    </style>
+
     {site.postTitleAfter !== "off" ? (
       <style
         is:inline
