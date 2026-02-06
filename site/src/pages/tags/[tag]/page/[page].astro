@@ -58,28 +58,12 @@ const nextUrl = safePage < totalPages ? `/tags/${tagSlug}/page/${safePage + 1}/`
   <div class="wrapper">
     <h3 class="archive-title">标签 {tag} 下的文章</h3>
 
-    {pagePosts.length ? (
-      <PostList
-        posts={pagePosts}
-        currentPage={safePage}
-        totalPages={totalPages}
-        prevUrl={prevUrl}
-        nextUrl={nextUrl}
-      />
-    ) : (
-      <article class="post post--text post--index main-item ps-enter-hidden-list" data-swup-animation>
-        <div class="post-inner">
-          <section class="post-item post-body is-tight-top">
-            <div class="wrapper post-wrapper">
-              <p class="is-centered">
-                <img src="/images/Zai_Cry.png" id="ZaiJPG" alt="没有适合的结果" class="empty-state-image" />
-              </p>
-              <p class="is-centered">肥肠抱歉，没有找到适合的结果( ´ﾟДﾟ`)</p>
-              <p class="is-centered">不妨在本站到处逛逛？</p>
-            </div>
-          </section>
-        </div>
-      </article>
-    )}
+    <PostList
+      posts={pagePosts}
+      currentPage={safePage}
+      totalPages={totalPages}
+      prevUrl={prevUrl}
+      nextUrl={nextUrl}
+    />
   </div>
 </BaseLayout>

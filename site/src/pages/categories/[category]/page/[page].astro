@@ -59,7 +59,7 @@ const nextUrl = safePage < totalPages ? `/categories/${categorySlug}/page/${safe
 
     <PostList
       posts={pagePosts}
-      currentPage={currentPage}
+      currentPage={safePage}
       totalPages={totalPages}
       prevUrl={prevUrl}
       nextUrl={nextUrl}
