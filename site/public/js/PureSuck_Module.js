@@ -381,7 +381,12 @@ const GoTopButton = (() => {
 
     // ✅ 使用 IntersectionObserver 替代滚动监听，消除强制重排
     function createSentinel() {
-        if (sentinel) return sentinel;
+        // Check if sentinel already exists in DOM (it might have been removed during page transition)
+        const existingSentinel = document.getElementById('go-top-sentinel');
+        if (existingSentinel) {
+            sentinel = existingSentinel;
+            return sentinel;
+        }
 
         sentinel = document.createElement('div');
         sentinel.id = 'go-top-sentinel';
@@ -862,6 +867,20 @@ function runShortcodes(root) {
 
 document.addEventListener('DOMContentLoaded', function () {
     runShortcodes();
+});
+
+// Re-initialize go-top button on Astro view transitions
+// astro:after-swap fires when DOM is swapped but before rendering completes
+document.addEventListener('astro:after-swap', function () {
+    // Immediately hide button on navigation, then let observer handle visibility
+    const button = document.querySelector('#go-top');
+    if (button) {
+        button.classList.remove('visible');
+    }
+    // Use requestAnimationFrame to ensure scroll position has been updated
+    requestAnimationFrame(function () {
+        handleGoTopButton();
+    });
 });
 
 /**
