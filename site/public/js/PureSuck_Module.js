@@ -870,20 +870,17 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // Re-initialize go-top button on Astro view transitions
-// Use requestAnimationFrame to ensure scroll position has been updated
+// astro:after-swap fires when DOM is swapped but before rendering completes
 document.addEventListener('astro:after-swap', function () {
     // Immediately hide button on navigation, then let observer handle visibility
     const button = document.querySelector('#go-top');
     if (button) {
         button.classList.remove('visible');
     }
+    // Use requestAnimationFrame to ensure scroll position has been updated
     requestAnimationFrame(function () {
         handleGoTopButton();
     });
-});
-
-document.addEventListener('astro:page-load', function () {
-    handleGoTopButton();
 });
 
 /**
