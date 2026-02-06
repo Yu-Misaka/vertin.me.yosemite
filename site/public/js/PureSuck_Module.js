@@ -869,6 +869,15 @@ document.addEventListener('DOMContentLoaded', function () {
     runShortcodes();
 });
 
+// Clean up medium-zoom before Astro view transitions swap the DOM
+// This removes stale image references that no longer exist after navigation
+document.addEventListener('astro:before-swap', function () {
+    if (window.mediumZoomInstance) {
+        // Detach all tracked images to prevent stale references
+        window.mediumZoomInstance.detach();
+    }
+});
+
 // Re-initialize go-top button on Astro view transitions
 // astro:after-swap fires when DOM is swapped but before rendering completes
 document.addEventListener('astro:after-swap', function () {
