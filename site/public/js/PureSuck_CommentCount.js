@@ -6,21 +6,32 @@
 (function() {
   'use strict';
 
+  // Use same Twikoo version as PureSuck_Twikoo.js
   var TWIKOO_SRC = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js';
   var isLoading = false;
 
+  // Get stored envId as fallback (from sessionStorage)
+  function getStoredEnvId() {
+    try {
+      return sessionStorage.getItem('twikooEnvId') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   function getEnvId() {
-    // Try to get envId from the comments element or from a data attribute
+    // Try to get envId from the comments element
     var root = document.getElementById('comments');
     if (root && root.dataset && root.dataset.twikooEnv) {
       return root.dataset.twikooEnv;
     }
-    // Fallback: look for the twikoo script tag's envId attribute on the html
+    // Fallback: look for the twikoo envId attribute on the html element
     var htmlEl = document.documentElement;
     if (htmlEl.dataset && htmlEl.dataset.twikooEnv) {
       return htmlEl.dataset.twikooEnv;
     }
-    return '';
+    // Final fallback: check sessionStorage
+    return getStoredEnvId();
   }
 
   function getCommentElements() {
@@ -47,17 +58,22 @@
       // Check if script is already loading
       var existingScript = document.querySelector('script[src*="twikoo"]');
       if (existingScript) {
-        // Wait for it to load
+        // Wait for it to load with proper cleanup
+        var resolved = false;
         var checkInterval = setInterval(function() {
-          if (window.twikoo) {
+          if (window.twikoo && !resolved) {
+            resolved = true;
             clearInterval(checkInterval);
             resolve(window.twikoo);
           }
         }, 100);
         // Timeout after 5 seconds
         setTimeout(function() {
-          clearInterval(checkInterval);
-          resolve(null);
+          if (!resolved) {
+            resolved = true;
+            clearInterval(checkInterval);
+            resolve(null);
+          }
         }, 5000);
         return;
       }
@@ -165,25 +181,6 @@
       } catch (e) {}
     }
   }
-
-  // Get stored envId as fallback
-  function getStoredEnvId() {
-    try {
-      return sessionStorage.getItem('twikooEnvId') || '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  // Override getEnvId to use stored value as fallback
-  var originalGetEnvId = getEnvId;
-  getEnvId = function() {
-    var envId = originalGetEnvId();
-    if (!envId) {
-      envId = getStoredEnvId();
-    }
-    return envId;
-  };
 
   function init() {
     storeEnvIdFromCommentsElement();
