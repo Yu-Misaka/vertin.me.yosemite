@@ -16,9 +16,11 @@ const tocHtml = Astro.props.tocHtml ?? "";
 
 const themeTokens = getThemeTokens(site.themeColor);
 const pageTitle = title ? `${title} - ${site.title}` : site.title;
+
+const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId : "";
 ---
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-twikoo-env={twikooEnvId || undefined}>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -103,6 +105,7 @@ const pageTitle = title ? `${title} - ${site.title}` : site.title;
     <script defer src="/js/PureSuck_LazyLoad.js"></script>
     <script defer src="/js/PureSuck_Pagefind.js"></script>
     <script defer src="/js/PureSuck_Twikoo.js"></script>
+    <script defer src="/js/PureSuck_CommentCount.js"></script>
     <script defer src="/js/PureSuck_ViewTransitions.js"></script>
     <script defer src="/js/PureSuck_APlayer.js"></script>
     <script defer src="/js/PureSuck_Fallback.js"></script>
