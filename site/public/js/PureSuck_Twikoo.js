@@ -1,19 +1,57 @@
+/**
+ * PureSuck Twikoo Integration
+ * 
+ * Handles both:
+ * 1. Comment widget initialization on post pages
+ * 2. Comment count fetching on list pages
+ */
 (function () {
   'use strict';
 
-  var TWIKOO_SRC = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js';
-  // 初始化计数器：使用模运算避免溢出
-  var initCounter = 0;
-  var MAX_COUNTER = 100000000;
-  // 防止重复初始化的标记
-  var lastInitPath = null;
-  var isInitializing = false;
+  // ==================== Shared Configuration ====================
+  var TWIKOO_SRC = 'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/twikoo/1.6.44/twikoo.all.min.js';
+
+  // ==================== Shared Utilities ====================
+  
+  // Get stored envId as fallback (from sessionStorage)
+  function getStoredEnvId() {
+    try {
+      return sessionStorage.getItem('twikooEnvId') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // Store envId for pages without the comments element
+  function storeEnvId(envId) {
+    if (envId) {
+      try {
+        sessionStorage.setItem('twikooEnvId', envId);
+      } catch (e) {}
+    }
+  }
 
   function getEnvId() {
+    // Try to get envId from the comments element
     var root = document.getElementById('comments');
-    if (!root || !root.dataset) return '';
-    return root.dataset.twikooEnv || '';
+    if (root && root.dataset && root.dataset.twikooEnv) {
+      return root.dataset.twikooEnv;
+    }
+    // Fallback: look for the twikoo envId attribute on the html element
+    var htmlEl = document.documentElement;
+    if (htmlEl.dataset && htmlEl.dataset.twikooEnv) {
+      return htmlEl.dataset.twikooEnv;
+    }
+    // Final fallback: check sessionStorage
+    return getStoredEnvId();
   }
+
+  // ==================== Comment Widget (for post pages) ====================
+  
+  var initCounter = 0;
+  var MAX_COUNTER = 100000000;
+  var lastInitPath = null;
+  var isInitializing = false;
 
   /**
    * 完全重新加载 Twikoo 脚本
@@ -114,17 +152,188 @@
     });
   }
 
-  window.__initTwikoo = initTwikoo;
+  // ==================== Comment Count (for list pages) ====================
+  
+  var isLoadingCount = false;
 
-  // 只使用 astro:page-load，它在初始页面加载和每次导航后都会触发
+  function getCommentElements() {
+    return document.querySelectorAll('a.icon-ui.icon-ui-comment.meta-item.meta-comment');
+  }
+
+  function extractPathFromHref(href) {
+    try {
+      var url = new URL(href, window.location.origin);
+      return url.pathname;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function loadTwikooScript() {
+    return new Promise(function(resolve) {
+      if (window.twikoo) {
+        resolve(window.twikoo);
+        return;
+      }
+      
+      // Check if script is already loading
+      var existingScript = document.querySelector('script[src*="twikoo"]');
+      if (existingScript) {
+        // Wait for it to load with proper cleanup
+        var resolved = false;
+        var checkInterval = setInterval(function() {
+          if (window.twikoo && !resolved) {
+            resolved = true;
+            clearInterval(checkInterval);
+            resolve(window.twikoo);
+          }
+        }, 100);
+        // Timeout after 5 seconds
+        setTimeout(function() {
+          if (!resolved) {
+            resolved = true;
+            clearInterval(checkInterval);
+            resolve(null);
+          }
+        }, 5000);
+        return;
+      }
+      
+      // Load the script
+      var script = document.createElement('script');
+      script.src = TWIKOO_SRC;
+      script.async = true;
+      script.onload = function() {
+        resolve(window.twikoo || null);
+      };
+      script.onerror = function() {
+        resolve(null);
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  function formatCommentCount(count) {
+    if (count === 0) {
+      return ' 暂无评论';
+    } else {
+      return ' ' + count + ' 条评论';
+    }
+  }
+
+  function updateCommentCounts() {
+    var commentElements = getCommentElements();
+    if (commentElements.length === 0) {
+      return;
+    }
+
+    // Collect all unique URLs
+    var urlMap = {}; // path -> [elements]
+    var urls = [];
+
+    commentElements.forEach(function(el) {
+      var href = el.getAttribute('href');
+      var path = extractPathFromHref(href);
+      if (path) {
+        if (!urlMap[path]) {
+          urlMap[path] = [];
+          urls.push(path);
+        }
+        urlMap[path].push(el);
+      }
+    });
+
+    if (urls.length === 0) {
+      return;
+    }
+
+    var envId = getEnvId();
+    if (!envId) {
+      return;
+    }
+
+    if (isLoadingCount) {
+      return;
+    }
+    isLoadingCount = true;
+
+    loadTwikooScript().then(function(twikoo) {
+      if (!twikoo || typeof twikoo.getCommentsCount !== 'function') {
+        isLoadingCount = false;
+        return;
+      }
+
+      twikoo.getCommentsCount({
+        envId: envId,
+        urls: urls,
+        includeReply: false
+      }).then(function(res) {
+        isLoadingCount = false;
+        if (!Array.isArray(res)) {
+          return;
+        }
+
+        res.forEach(function(item) {
+          var elements = urlMap[item.url];
+          if (elements) {
+            var text = formatCommentCount(item.count);
+            elements.forEach(function(el) {
+              el.textContent = text;
+            });
+          }
+        });
+      }).catch(function(err) {
+        isLoadingCount = false;
+        console.error('Failed to fetch comment counts:', err);
+      });
+    }).catch(function() {
+      isLoadingCount = false;
+    });
+  }
+
+  // ==================== Initialization ====================
+
+  var hasInitialized = false;
+
+  function init() {
+    // Prevent double initialization
+    if (hasInitialized) {
+      return;
+    }
+    hasInitialized = true;
+
+    // Store envId for pages that might not have the comments element
+    var envId = getEnvId();
+    storeEnvId(envId);
+
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    requestAnimationFrame(function() {
+      // Initialize comment widget on post pages
+      initTwikoo();
+      // Update comment counts on list pages
+      updateCommentCounts();
+    });
+  }
+
+  // Export functions for external use
+  window.__initTwikoo = initTwikoo;
+  window.__updateCommentCounts = updateCommentCounts;
+
+  // Run on initial load and after page transitions (astro:page-load works for both)
   document.addEventListener('astro:page-load', function () {
-    // 重置路径追踪，因为这是新页面
+    // Reset state for new page navigation
     lastInitPath = null;
     isInitializing = false;
+    isLoadingCount = false;
+    hasInitialized = false; // Allow re-initialization on page navigation
     
-    // 使用 requestAnimationFrame 确保 DOM 已完全渲染
-    requestAnimationFrame(function() {
-      initTwikoo();
-    });
+    init();
   });
+
+  // Also run on DOMContentLoaded for initial page load without Astro transitions
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();

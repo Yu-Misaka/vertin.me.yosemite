@@ -1,8 +1,7 @@
 (function () {
   'use strict';
 
-  const PRIMARY_SRC = 'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/aplayer/1.10.1/APlayer.min.js';
-  const FALLBACK_SRC = 'https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js';
+  const APLAYER_SRC = 'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/aplayer/1.10.1/APlayer.min.js';
 
   function loadScript(src, cb) {
     if (!src) return cb();
@@ -58,10 +57,7 @@
       return;
     }
 
-    loadScript(PRIMARY_SRC, () => {
-      if (window.APlayer) return create();
-      loadScript(FALLBACK_SRC, create);
-    });
+    loadScript(APLAYER_SRC, create);
   }
 
   window.__initAPlayer = init;

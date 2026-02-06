@@ -42,10 +42,6 @@
 		backface-visibility: hidden;
 	}
 
-	#ZaiJPG {
-		filter: invert(100%);
-	}
-
 	/* Dark 颜色变量 */
 }
 

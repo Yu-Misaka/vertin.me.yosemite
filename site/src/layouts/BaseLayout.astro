@@ -16,9 +16,11 @@ const tocHtml = Astro.props.tocHtml ?? "";
 
 const themeTokens = getThemeTokens(site.themeColor);
 const pageTitle = title ? `${title} - ${site.title}` : site.title;
+
+const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId : "";
 ---
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-twikoo-env={twikooEnvId || undefined}>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
