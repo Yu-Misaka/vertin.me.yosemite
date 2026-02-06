@@ -377,6 +377,7 @@
 
       if (img.hasAttribute('data-lazy-src')) return;
       if (img.getAttribute('loading') === 'eager') return;
+      if (img.classList.contains('lazy-loaded')) return;
 
       const src = img.getAttribute('src');
       if (src) {
