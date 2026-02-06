@@ -137,6 +137,29 @@ const pageTitle = title ? `${title} - ${site.title}` : site.title;
         renderLatex();
       });
     </script>
+
+    <script is:inline>
+      document.addEventListener("astro:page-load", () => {
+        if (sessionStorage.getItem("mox_greeted")) return;
+        sessionStorage.setItem("mox_greeted", "1");
+
+        const now = new Date();
+        const hour = now.getHours();
+        const timeStr = now.toLocaleString();
+
+        let greeting = "你好！";
+        if (hour < 6) greeting = "夜深了";
+        else if (hour < 12) greeting = "早上好";
+        else if (hour < 18) greeting = "下午好";
+        else greeting = "晚上好";
+
+        MoxNotification({
+          title: greeting,
+          duration: 5000,
+          message: "欢迎访问本站。<br>当前时间：" + timeStr
+        });
+      });
+    </script>
   </head>
   <body>
     <div class="wrapper">
