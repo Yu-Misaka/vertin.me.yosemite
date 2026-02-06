@@ -94,11 +94,9 @@
 
   function formatCommentCount(count) {
     if (count === 0) {
-      return '暂无评论';
-    } else if (count === 1) {
-      return '1 条评论';
+      return ' 暂无评论';
     } else {
-      return count + ' 条评论';
+      return ' ' + count + ' 条评论';
     }
   }
 
