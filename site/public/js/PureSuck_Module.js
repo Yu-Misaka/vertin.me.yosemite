@@ -862,6 +862,12 @@ function runShortcodes(root) {
         window.mediumZoomInstance.attach(images);
     }
 
+    // 也绑定已经完成懒加载的图片（可能在 VT 导航后未被正确绑定）
+    const loadedImages = scope.querySelectorAll('[data-zoomable].lazy-loaded:not(.medium-zoom-image)');
+    if (loadedImages.length > 0) {
+        window.mediumZoomInstance.attach(loadedImages);
+    }
+
     Comments_Submit();
 }
 
@@ -875,6 +881,9 @@ document.addEventListener('astro:before-swap', function () {
     if (window.mediumZoomInstance) {
         // Detach all tracked images to prevent stale references
         window.mediumZoomInstance.detach();
+        // Force recreation of the instance on next runShortcodes call
+        // This ensures a completely clean state after navigation
+        window.mediumZoomInstance = null;
     }
 });
 
