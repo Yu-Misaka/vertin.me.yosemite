@@ -35,7 +35,7 @@ export const site = {
   archivesCover: "/persistent-image/image1_waifu2x_2560x1440_3n.webp",
   comments: {
     provider: "twikoo",
-    envId: "https://comment.academe.city"
+    envId: "https://twikoo-steel-beta.vercel.app/"
   },
   aplayer: {
     enabled: true,
