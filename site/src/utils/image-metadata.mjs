@@ -1,8 +1,7 @@
 import { resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
-const publicRoot = resolve(fileURLToPath(new URL('../../public/', import.meta.url)));
+const publicRoot = resolve(process.cwd(), 'public');
 const cache = new Map();
 
 /** Read local image dimensions once per build; never fetch remote content. */

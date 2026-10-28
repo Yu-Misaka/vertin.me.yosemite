@@ -14,7 +14,7 @@ const pageItems = pages
   .sort((a, b) => (a.data.order ?? 999) - (b.data.order ?? 999))
   .map((page) => ({
     label: page.data.title,
-    href: `/${page.slug}`,
+    href: `/${page.id}`,
     order: page.data.order
   }));
 

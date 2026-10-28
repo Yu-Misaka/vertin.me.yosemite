@@ -9,7 +9,7 @@
 
 路径：`site/src/content/posts/*.md`
 
-Frontmatter 字段（见 `site/src/content/config.ts`）：
+Frontmatter 字段（见 `site/src/content.config.ts`）：
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
@@ -43,7 +43,7 @@ draft: false
 
 路径：`site/src/content/pages/*.md`
 
-Frontmatter 字段（见 `site/src/content/config.ts`）：
+Frontmatter 字段（见 `site/src/content.config.ts`）：
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
@@ -125,7 +125,7 @@ Frontmatter 字段（见 `site/src/content/config.ts`）：
 - 播放器在空闲时加载，音频点击播放后才下载，并在导航间保留。评论组件接近视口才加载，HTTP 评论数查询不加载评论 UI；Twikoo 客户端固定为与现有服务兼容的 1.6.44，以同站静态资源原样加载，避免旧 Vue UMD 库再次打包的兼容问题。其注入样式会在导航间保留。
 - 字体构建插件从现有字体分片中选择源码和文章需要的字符范围，新增内容会自动更新。未覆盖的评论生僻字使用系统字体回退；原始字体及许可保留在 `site/public/fonts/`。
 
-在 `site/` 目录运行：
+使用 Node.js 22.23.4 或更高版本（CI 使用 Node 24），在 `site/` 目录运行：
 
 ```bash
 npm ci
@@ -147,3 +147,8 @@ npm run preview
 - 字体声明从 228,654 字节减至 42,791 字节（约 81%）；这是资源体积比较，不是帧率测量。
 - 浏览器检查覆盖连续鼠标导航、前进后退、搜索、长文目录、Tabs、折叠、图片缩放、评论跨页复用，以及 390px 手机视口。最终评论组件跨页回归无警告或错误。
 - 兼容范围依赖更新后，npm audit 仍有 9 项历史告警（5 low、3 high、1 critical），部分修复涉及跨主版本迁移。本轮保留 Astro 5 静态生成架构，未执行强制跨版本修复；这些告警尚未清零。后续依赖维护应结合上游公告评估，而不能将静态部署视为告警已经解决。
+
+### 依赖升级（2026-10-28）
+
+- Astro 7、Vite 8 和新版内容集合 API；保留 unified Markdown 处理链与既有 HTML 空白处理。
+- Twikoo 保持 1.6.44，以维持现有评论服务兼容。

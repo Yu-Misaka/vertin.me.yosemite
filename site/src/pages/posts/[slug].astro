@@ -1,5 +1,5 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, render } from "astro:content";
 import Cover from "../../components/Cover.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { site } from "../../config/site";
@@ -9,11 +9,11 @@ import { buildTocHtml } from "../../utils/toc";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts", ({ data }) => !data.draft);
-  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
 }
 
 const { post } = Astro.props;
-const { Content, headings } = await post.render();
+const { Content, headings } = await render(post);
 
 const hasImg = Boolean(post.data.cover);
 const excerpt = post.data.description ?? getExcerpt(post.body);
@@ -32,7 +32,7 @@ const tocHtml = buildTocHtml(headings);
   <div class="wrapper">
     <article
       class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index post--single main-item`}
-      data-ps-post-key={post.slug}
+      data-ps-post-key={post.id}
     >
       <div class="post-inner">
         <header class={`post-item post-header ${hasImg ? "no-bg" : ""}`}>
@@ -58,7 +58,7 @@ const tocHtml = buildTocHtml(headings);
         <section class="post-item post-body">
           <div class="wrapper post-wrapper">
             <h1 class="post-title">
-              <a href={`/posts/${post.slug}/`} title={post.data.title}>
+              <a href={`/posts/${post.id}/`} title={post.data.title}>
                 {post.data.title}
               </a>
             </h1>
@@ -66,12 +66,12 @@ const tocHtml = buildTocHtml(headings);
               <div class="meta post-meta">
                 <a
                   itemprop="datePublished"
-                  href={`/posts/${post.slug}/`}
+                  href={`/posts/${post.id}/`}
                   class="icon-ui icon-ui-date meta-item meta-date"
                 >
                   <span class="meta-count">{post.data.date.toISOString().slice(0, 10)}</span>
                 </a>
-                <a href={`/posts/${post.slug}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
+                <a href={`/posts/${post.id}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
                   暂无评论
                 </a>
               </div>
@@ -89,7 +89,7 @@ const tocHtml = buildTocHtml(headings);
                   <span data-pagefind-meta="title">{post.data.title}</span>
                   <span data-pagefind-meta="date">{post.data.date.toISOString().slice(0, 10)}</span>
                   <span data-pagefind-meta="description">{excerpt}</span>
-                  <span data-pagefind-meta="slug">{post.slug}</span>
+                  <span data-pagefind-meta="slug">{post.id}</span>
                   <span data-pagefind-meta="type">post</span>
                   {post.data.category ? <span data-pagefind-meta="category">{post.data.category}</span> : null}
                   {post.data.cover ? <span data-pagefind-meta="image">{post.data.cover}</span> : null}
@@ -100,8 +100,8 @@ const tocHtml = buildTocHtml(headings);
               {site.show.copyright ? (
                 <div class="license-info-card">
                   <div class="license-info-title">{post.data.title}</div>
-                  <a class="license-info-link" href={`/posts/${post.slug}/`}>
-                    {`/posts/${post.slug}/`}
+                  <a class="license-info-link" href={`/posts/${post.id}/`}>
+                    {`/posts/${post.id}/`}
                   </a>
                   <div class="license-info-meta">
                     <div>

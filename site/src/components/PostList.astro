@@ -20,7 +20,7 @@ const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props as Prop
     return (
       <article
         class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item`}
-        data-ps-post-key={post.slug}
+        data-ps-post-key={post.id}
         data-protected="false"
 
       >
@@ -53,7 +53,7 @@ const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props as Prop
           <section class="post-item post-body">
             <div class="wrapper post-wrapper">
               <h1 class="post-title">
-                <a href={`/posts/${post.slug}/`}>{post.data.title}</a>
+                <a href={`/posts/${post.id}/`}>{post.data.title}</a>
               </h1>
               <p class="post-excerpt">
                 {post.data.description ?? getExcerpt(post.body)}
@@ -66,12 +66,12 @@ const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props as Prop
               <div class="meta post-meta">
                 <a
                   itemprop="datePublished"
-                  href={`/posts/${post.slug}/`}
+                  href={`/posts/${post.id}/`}
                   class="icon-ui icon-ui-date meta-item meta-date"
                 >
                   <span class="meta-count">{post.data.date.toISOString().slice(0, 10)}</span>
                 </a>
-                <a href={`/posts/${post.slug}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
+                <a href={`/posts/${post.id}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
                   暂无评论
                 </a>
               </div>

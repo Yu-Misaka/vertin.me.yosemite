@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Personal blog built with Astro 5 and the "PureSuck" theme. Content is in Chinese. The Astro project lives inside the `site/` directory.
+Personal blog built with Astro 7 and the "PureSuck" theme. Content is in Chinese. The Astro project lives inside the `site/` directory.
 
 ## Commands
 
@@ -40,4 +40,4 @@ npx tsc --noEmit   # TypeScript check (used in CI)
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`): Node 20, runs `npm ci` → `astro sync` → `tsc --noEmit` → `npm test` → `npm run build` → `npm run verify:build` from `site/`.
+GitHub Actions (`.github/workflows/ci.yml`): Node 24, runs `npm ci` → `astro sync` → `tsc --noEmit` → `npm test` → `npm run build` → `npm run verify:build` from `site/`.

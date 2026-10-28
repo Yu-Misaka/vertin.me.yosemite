@@ -1,5 +1,5 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, render } from "astro:content";
 import Cover from "../components/Cover.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../config/site";
@@ -8,17 +8,17 @@ import { buildTocHtml } from "../utils/toc";
 
 export async function getStaticPaths() {
   const pages = await getCollection("pages");
-  return pages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+  return pages.map((page) => ({ params: { slug: page.id }, props: { page } }));
 }
 
 const { page } = Astro.props;
-const { Content, headings } = await page.render();
+const { Content, headings } = await render(page);
 
 const hasImg = Boolean(page.data.cover);
 
 const tocHtml = buildTocHtml(headings);
 ---
-<BaseLayout pageType="page" navCurrent={`/${page.slug}`} title={page.data.title} tocHtml={tocHtml}>
+<BaseLayout pageType="page" navCurrent={`/${page.id}`} title={page.data.title} tocHtml={tocHtml}>
   <div class="wrapper">
     <article class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item`}>
       <div class="post-inner">
@@ -38,16 +38,16 @@ const tocHtml = buildTocHtml(headings);
         <section class="post-item post-body">
           <div class="wrapper post-wrapper">
             <h1 class="post-title">
-              <a href={`/${page.slug}/`} title={page.data.title}>
+              <a href={`/${page.id}/`} title={page.data.title}>
                 {page.data.title}
               </a>
             </h1>
             <div class="inner-post-wrapper">
               <div class="meta post-meta">
-                <a href={`/${page.slug}/`} class="icon-ui icon-ui-date meta-item meta-date">
+                <a href={`/${page.id}/`} class="icon-ui icon-ui-date meta-item meta-date">
                   <span class="meta-count">{page.data.date ? page.data.date.toISOString().slice(0, 10) : ""}</span>
                 </a>
-                <a href={`/${page.slug}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
+                <a href={`/${page.id}/#comments`} class="icon-ui icon-ui-comment meta-item meta-comment">
                   暂无评论
                 </a>
               </div>
