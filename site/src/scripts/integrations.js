@@ -155,5 +155,7 @@ export async function initImages(root, signal) {
   const { default: mediumZoom } = await import('medium-zoom');
   if (signal.aborted) return;
   const zoom = mediumZoom(images, { background: 'rgba(0,0,0,.85)', margin: 24 });
+  // Close the overlay before Astro captures the outgoing document.
+  document.addEventListener('site:before-navigation', () => zoom.close({ immediate: true }), { signal });
   signal.addEventListener('abort', () => { zoom.close({ immediate: true }); zoom.detach(); }, { once: true });
 }

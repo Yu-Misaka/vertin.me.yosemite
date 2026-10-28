@@ -30,9 +30,9 @@ const tags = Array.from(
 
 const tocHtml = Astro.props.tocHtml ?? "";
 ---
-<div class="right-sidebar" id="right-sidebar" data-pagefind-ignore>
+<div class:list={["right-sidebar", { "has-toc": Boolean(tocHtml) }]} id="right-sidebar" data-pagefind-ignore>
   {site.show.search ? (
-    <div class="search-section">
+    <div class="search-section" data-sidebar-static transition:persist="sidebar-search">
       <header class="section-header">
         <span class="icon-search"></span>
         <span class="title">搜索</span>
@@ -49,7 +49,7 @@ const tocHtml = Astro.props.tocHtml ?? "";
   ) : null}
 
   {site.show.category ? (
-    <div class="cloud-section">
+    <div class="cloud-section" data-sidebar-static transition:persist="sidebar-categories">
       <header class="section-header">
         <span class="icon-emo-wink"></span>
         <span class="title">分类</span>
@@ -71,7 +71,7 @@ const tocHtml = Astro.props.tocHtml ?? "";
   ) : null}
 
   {site.show.tag ? (
-    <div class="cloud-section">
+    <div class="cloud-section" data-sidebar-static transition:persist="sidebar-tags">
       <header class="section-header">
         <span class="icon-hashtag"></span>
         <span class="title">标签</span>
@@ -96,7 +96,7 @@ const tocHtml = Astro.props.tocHtml ?? "";
   ) : null}
 
   {site.show.toc && tocHtml ? (
-    <div class="toc-section" id="toc-section">
+    <div class="toc-section" id="toc-section" transition:name="article-toc">
       <header class="section-header">
         <span class="icon-article"></span>
         <span class="title">文章目录</span>

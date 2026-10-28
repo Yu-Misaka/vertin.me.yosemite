@@ -19,11 +19,11 @@
 
 #mox-toast.show {
     visibility: visible;
-    animation: fadein 0.5s;
+    animation: fadein var(--motion-local) var(--motion-ease);
 }
 
 #mox-toast.hide {
-    animation: fadeout 0.5s;
+    animation: fadeout var(--motion-press) var(--motion-exit);
 }
 
 #mox-toast.bottom {
@@ -55,65 +55,65 @@
 }
 
 #mox-toast.bottom.show {
-    animation: fadein-bottom 0.5s;
+    animation: fadein-bottom var(--motion-local) var(--motion-ease);
 }
 
 #mox-toast.bottom.hide {
-    animation: fadeout-bottom 0.5s;
+    animation: fadeout-bottom var(--motion-press) var(--motion-exit);
 }
 
 #mox-toast.top.show {
-    animation: fadein-top 0.5s;
+    animation: fadein-top var(--motion-local) var(--motion-ease);
 }
 
 #mox-toast.top.hide {
-    animation: fadeout-top 0.5s;
+    animation: fadeout-top var(--motion-press) var(--motion-exit);
 }
 
 @keyframes fadein-bottom {
     from {
-        bottom: 0;
+        transform: translate(-50%, calc(-50% + 8px));
         opacity: 0;
     }
 
     to {
-        bottom: 45px;
+        transform: translate(-50%, -50%);
         opacity: 1;
     }
 }
 
 @keyframes fadeout-bottom {
     from {
-        bottom: 45px;
+        transform: translate(-50%, -50%);
         opacity: 1;
     }
 
     to {
-        bottom: 0;
+        transform: translate(-50%, calc(-50% + 8px));
         opacity: 0;
     }
 }
 
 @keyframes fadein-top {
     from {
-        top: 0;
+        transform: translate(-50%, calc(-50% - 8px));
         opacity: 0;
     }
 
     to {
-        top: 45px;
+        transform: translate(-50%, -50%);
         opacity: 1;
     }
 }
 
 @keyframes fadeout-top {
     from {
-        top: 45px;
+        transform: translate(-50%, -50%);
         opacity: 1;
     }
 
     to {
-        top: 0;
+        transform: translate(-50%, calc(-50% - 8px));
         opacity: 0;
     }
 }
@@ -130,7 +130,7 @@
 }
 
 .mox-notification {
-    width: 300px;
+    width: min(300px, calc(100vw - 40px));
     padding: 15px;
     border: 1px solid var(--border-color);
     border-radius: 0.75rem;
@@ -140,19 +140,19 @@
     background-color: var(--card2-color);
     color: var(--text-color);
     font-size: 0.95rem;
-    transform: translateX(100%);
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform: translateY(8px);
+    transition: transform var(--motion-local) var(--motion-ease), opacity var(--motion-local) var(--motion-ease);
     opacity: 0;
 }
 
 .mox-notification.show {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
 }
 
 .mox-notification.hide {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateY(8px);
 }
 
 .mox-icon {
@@ -189,7 +189,7 @@
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 1000;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--motion-local) var(--motion-ease);
 }
 .mox-overlay.show {
     opacity: 1;
@@ -210,7 +210,7 @@
     flex-direction: column;
     border: 1px solid var(--border-color);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--motion-local) var(--motion-ease);
 }
 .mox-window.show {
     opacity: 1;

@@ -10,6 +10,7 @@ export function initToc(root, signal) {
   let frame = 0;
   let measureFrame = 0;
   let active = -1;
+  let markerTop;
 
   const update = () => {
     frame = 0;
@@ -26,7 +27,13 @@ export function initToc(root, signal) {
         if (i === index) link.setAttribute('aria-current', 'location');
         else link.removeAttribute('aria-current');
       });
-      if (marker && links[index]) marker.style.transform = `translateY(${links[index].closest('li').offsetTop + 4}px)`;
+      if (marker && links[index]) {
+        const top = links[index].closest('li').offsetTop + 4;
+        marker.toggleAttribute('data-jump', markerTop === undefined || Math.abs(top - markerTop) > 120);
+        marker.style.transform = `translateY(${top}px)`;
+        if (marker.hasAttribute('data-jump')) marker.getBoundingClientRect();
+        markerTop = top;
+      }
     }
     section.classList.toggle('sticky', scrollY > threshold);
   };

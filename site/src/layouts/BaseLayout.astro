@@ -62,9 +62,9 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
 
     <!-- medium-zoom CSS (included statically to persist across view transitions) -->
     <style is:inline>
-      .medium-zoom-overlay{position:fixed;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity .3s;will-change:opacity}
+      .medium-zoom-overlay{position:fixed;top:0;right:0;bottom:0;left:0;opacity:0;transition:opacity var(--motion-page) var(--motion-ease);will-change:opacity}
       .medium-zoom--opened .medium-zoom-overlay{cursor:pointer;cursor:zoom-out;opacity:1}
-      .medium-zoom-image{cursor:pointer;cursor:zoom-in;transition:transform .3s cubic-bezier(.2,0,.2,1)!important}
+      .medium-zoom-image{cursor:pointer;cursor:zoom-in;transition:transform var(--motion-page) var(--motion-ease)!important}
       .medium-zoom-image--hidden{visibility:hidden}
       .medium-zoom-image--opened{position:relative;cursor:pointer;cursor:zoom-out;will-change:transform}
     </style>
@@ -90,7 +90,7 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
   <body>
     <div class="wrapper">
       <Header current={navCurrent} />
-      <div id="page-content" data-ps-page-type={pageType}>
+      <div id="page-content" data-ps-page-type={pageType} data-nav-current={navCurrent}>
         <main class="main" transition:name="content">
           <slot />
         </main>

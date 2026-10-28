@@ -84,6 +84,8 @@ test('local Markdown images receive real dimensions and native lazy loading', as
 test('all shortcode families survive build-time compilation, including collapsed content', async () => {
   const html = await render('[window type="yellow" title="Title"]Body[/window]\n\n[collapsible-panel title="Archive"]\n\n## Preserved heading\n\nText\n\n[/collapsible-panel]\n\n[bilibili-card bvid="BV123"]\n\n[PicGrid]![one](/images/avatar.webp)[/PicGrid]');
   for (const name of ['window', 'collapsible-panel', 'bilibili-card', 'pic-grid']) assert.equal(elements(html, hasClass(name)).length, 1);
+  assert.equal(elements(html, hasClass('collapsible-content'))[0].properties.style, undefined,
+    'inline max-height must not clamp the measured-height animation');
   assert.match(html, /Preserved heading/);
   assert.equal(elements(html, node => node.tagName === 'iframe')[0].properties.loading, 'lazy');
 });

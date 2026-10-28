@@ -9,9 +9,11 @@ const app = new AbortController();
 let page;
 let currentRoot;
 let firstLoad = true;
+let cancelEntry = () => {};
 
 setupTheme(app.signal);
 setupTransitions(app.signal);
+document.addEventListener('site:before-navigation', () => cancelEntry(), { signal: app.signal });
 
 function initPage() {
   const root = document.getElementById('page-content');
@@ -37,8 +39,8 @@ function initPage() {
     }).catch(error => console.warn('搜索暂时不可用', error));
   }
   if (firstLoad) {
-    const cancel = enterPage(root);
-    signal.addEventListener('abort', cancel, { once: true });
+    cancelEntry = enterPage(root);
+    signal.addEventListener('abort', cancelEntry, { once: true });
     firstLoad = false;
   }
 }
@@ -46,6 +48,10 @@ function initPage() {
 // Each swapped document is initialized once. Individual modules own no router
 // hooks and release their observers, listeners and pending work on page abort.
 document.addEventListener('astro:before-swap', () => page?.abort(), { signal: app.signal });
+document.addEventListener('astro:after-swap', initPage, { signal: app.signal });
 document.addEventListener('astro:page-load', initPage, { signal: app.signal });
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPage, { once: true });
 else initPage();
+
+// Development updates must not leave a second set of router listeners running.
+if (import.meta.hot) import.meta.hot.dispose(() => { page?.abort(); app.abort(); });

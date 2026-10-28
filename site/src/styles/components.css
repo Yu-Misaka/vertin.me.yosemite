@@ -92,7 +92,7 @@
     border-radius: 14px;
     cursor: pointer;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    transition: opacity .3s ease, background-color .3s ease;
+    transition: opacity var(--motion-feedback) var(--motion-ease), background-color var(--motion-color) var(--motion-ease);
 }
 
 #go-top.visible {
@@ -155,7 +155,7 @@
     margin: 20px 0 !important;
     display: flex;
     padding: 10px 20px;
-    transition: transform .3s ease, box-shadow .3s ease;
+    transition: transform var(--motion-feedback) var(--motion-ease), box-shadow var(--motion-feedback) var(--motion-ease);
     transform: scale(1);
     color: var(--pure-color);
     font-weight: bold;
@@ -219,7 +219,7 @@
     margin: 20px 0 !important;
     padding: 20px 0px 0px 10px;
     position: relative;
-    transition: background-color .3s ease, border-color .3s ease, transform .3s ease;
+    transition: background-color var(--motion-color) var(--motion-ease), border-color var(--motion-color) var(--motion-ease), transform var(--motion-feedback) var(--motion-ease);
 }
 
 @media (hover: hover) {
@@ -254,7 +254,7 @@
     opacity: 0.22;
     border-radius: 0 0 3px 3px;
     pointer-events: none;
-    transition: opacity .3s ease;
+    transition: opacity var(--motion-feedback) var(--motion-ease);
 }
 
 .window::after {
@@ -270,7 +270,7 @@
             transparent);
     opacity: 0.04;
     pointer-events: none;
-    transition: opacity .3s ease;
+    transition: opacity var(--motion-feedback) var(--motion-ease);
 }
 
 .window.blue {
@@ -330,7 +330,7 @@
 
 .window-prompt-wrap {
     margin: 0 0.75rem;
-    transition: letter-spacing .35s ease, color .5s ease;
+    transition: color var(--motion-color) var(--motion-ease);
 }
 
 .window-prompt-wrap a {
@@ -341,17 +341,7 @@
     font-weight: bold;
     text-align: left;
     letter-spacing: 0.01em;
-    transition: letter-spacing .35s ease, color .5s ease;
-}
-
-@media (hover: hover) {
-    .window:hover .window-prompt-heading {
-        letter-spacing: 0.03em;
-    }
-
-    .window:hover .window-prompt-wrap {
-        letter-spacing: 0.01em;
-    }
+    transition: color var(--motion-color) var(--motion-ease);
 }
 
 .window-prompt-prompt,
@@ -366,20 +356,14 @@
     flex-flow: row wrap;
     width: calc(100% + 16px);
     margin-left: -16px;
-    transition: scale .3s ease;
 }
 
 @media (hover: hover) {
-    .friendsboard-list:hover .friendsboard-item {
-        opacity: 0.55;
-        scale: 1;
-    }
 
     .friendsboard-list:hover .friendsboard-item:hover {
         opacity: 1;
         background-color:
             color-mix(in srgb, var(--themecolor) 8%, var(--card-color));
-        scale: 1.03;
     }
 }
 
@@ -407,7 +391,7 @@
 
     user-select: none;
 
-    transition: background-color .3s ease, border-color .3s ease, transform .3s ease, scale .3s ease, opacity .3s ease;
+    transition: background-color var(--motion-color) var(--motion-ease), border-color var(--motion-color) var(--motion-ease), transform var(--motion-feedback) var(--motion-ease), opacity var(--motion-feedback) var(--motion-ease);
 }
 
 .friendsboard-link {
@@ -432,7 +416,7 @@
 }
 
 .friendsboard-item:active {
-    transform: scale(0.96);
+    transform: scale(0.98);
 }
 
 .friends-card-header {
@@ -448,7 +432,7 @@
     letter-spacing: 0.01em;
     color: var(--text-color);
 
-    transition: color .3s ease, letter-spacing .3s ease;
+    transition: color var(--motion-color) var(--motion-ease);
 }
 
 .friends-card-username::before {
@@ -464,7 +448,7 @@
     border: 1.5px solid var(--line-color);
     background-color: transparent;
 
-    transition: border-color .3s ease, transform .3s ease;
+    transition: border-color var(--motion-color) var(--motion-ease), transform var(--motion-feedback) var(--motion-ease);
 }
 
 .friends-card-username::after {
@@ -480,7 +464,7 @@
     background-color: var(--themehovercolor);
     opacity: 0;
 
-    transition: opacity .2s ease;
+    transition: opacity var(--motion-feedback) var(--motion-ease);
 }
 
 @media (hover: hover) {
@@ -488,7 +472,6 @@
         color: color-mix(in srgb,
                 var(--themehovercolor) 75%,
                 var(--text-color));
-        letter-spacing: 0.03em;
     }
 
     .friendsboard-item:hover .friends-card-username::before {
@@ -520,7 +503,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 
-    transition: color .2s ease;
+    transition: color var(--motion-color) var(--motion-ease);
 }
 
 .friends-card-avatar-container {
@@ -538,7 +521,7 @@
     /*background-color: var(--pure-color);*/
     /*border: 1px solid var(--line-color);*/
 
-    transition: border-color .3s ease, box-shadow .3s ease;
+    transition: border-color var(--motion-color) var(--motion-ease), box-shadow var(--motion-feedback) var(--motion-ease);
 }
 
 @media (hover: none) {
@@ -613,7 +596,7 @@
     position: relative;
     letter-spacing: 0.01em;
     font-weight: 500;
-    transition: background-color .3s ease, letter-spacing .25s ease, font-weight .25s ease;
+    transition: background-color var(--motion-color) var(--motion-ease);
 }
 
 .collapsible-header::after {
@@ -625,12 +608,10 @@
     height: 1px;
     background-color: var(--line-color);
     opacity: 0;
-    transition: opacity .25s ease;
+    transition: opacity var(--motion-feedback) var(--motion-ease);
 }
 
 .collapsible-header.active {
-    letter-spacing: 0.035em;
-    font-weight: 550;
     background-color: color-mix(in srgb,
             var(--themecolor) 6%,
             var(--card2-color));
@@ -645,7 +626,7 @@
     font-size: 0.85em;
     color: var(--text2-color);
     transform: translateY(1px);
-    transition: transform .3s ease, color .3s ease;
+    transition: transform var(--motion-feedback) var(--motion-ease), color var(--motion-color) var(--motion-ease);
 }
 
 .collapsible-header.active .icon {
@@ -654,20 +635,18 @@
 }
 
 .collapsible-content {
-    max-height: 0;
+    height: 0;
     overflow: hidden;
-    /* 与整体动画节奏协调：480ms + cubic-bezier 缓动 */
-    transition: max-height .48s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: height var(--motion-page) var(--motion-ease);
 }
 
 .collapsible-details {
     padding: 22px 24px 28px;
     color: var(--text2-color);
     line-height: 1.85;
-    transform: translateY(-6px);
+    transform: translateY(4px);
     opacity: 0;
-    /* 内容淡入：略快于容器展开，形成层次感 */
-    transition: transform .42s cubic-bezier(0.2, 0.8, 0.2, 1), opacity .42s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform var(--motion-local) var(--motion-ease), opacity var(--motion-local) var(--motion-ease);
 }
 
 .collapsible-details>*:first-child {
@@ -717,7 +696,7 @@
 .timeline-item {
     position: relative;
     padding: 14px 0;
-    transition: opacity .25s ease;
+    transition: opacity var(--motion-feedback) var(--motion-ease);
 }
 
 .timeline-item::before {
@@ -731,7 +710,7 @@
     background-color: var(--line-color);
     transform: translateX(-50%);
     opacity: 0.9;
-    transition: background-image .25s ease, opacity .25s ease;
+    transition: opacity var(--motion-feedback) var(--motion-ease);
 }
 
 .timeline-item:not(:last-child)::after {
@@ -755,7 +734,7 @@
     background-color: var(--card-color);
     border: 1.5px solid var(--border-color);
     z-index: 1;
-    transition: border-color .25s ease, background-color .25s ease, transform .25s ease;
+    transition: border-color var(--motion-color) var(--motion-ease), background-color var(--motion-color) var(--motion-ease), transform var(--motion-feedback) var(--motion-ease);
 }
 
 .timeline-dot::after {
@@ -769,7 +748,7 @@
     background-color: var(--border-color);
     transform: translate(-50%, -50%);
     opacity: 0.6;
-    transition: background-color .25s ease, opacity .25s ease;
+    transition: background-color var(--motion-color) var(--motion-ease), opacity var(--motion-feedback) var(--motion-ease);
 }
 
 :is(#timeline, .timeline):hover .timeline-item {
@@ -834,44 +813,6 @@
     }
 }
 
-.tab-header-wrapper {
-    display: flex;
-    align-items: center;
-    position: relative;
-}
-
-.scroll-button {
-    display: none;
-    background: transparent;
-    border: none;
-    font-size: 0.9rem;
-    cursor: pointer;
-    color: var(--text2-color);
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1;
-    font-family: "fontello";
-    opacity: 0.45;
-    transition: opacity .25s ease, color .25s ease;
-}
-
-.scroll-button.left {
-    left: -10px;
-    transform: translateY(-50%) rotate(-90deg);
-}
-
-.scroll-button.right {
-    right: -10px;
-    transform: translateY(-50%) rotate(90deg);
-}
-
-.scroll-button:hover {
-    opacity: 0.9;
-    color: var(--themecolor);
-}
-
-
 /* Tabs */
 
 .tab-header-wrapper {
@@ -893,7 +834,7 @@
     z-index: 1;
     font-family: "fontello";
     opacity: 0.45;
-    transition: opacity .25s ease, color .25s ease;
+    transition: opacity var(--motion-feedback) var(--motion-ease), color var(--motion-color) var(--motion-ease);
 }
 
 .scroll-button.left {
@@ -931,7 +872,7 @@
     position: relative;
     flex-shrink: 0;
     letter-spacing: 0.015em;
-    transition: color .25s ease, letter-spacing .25s ease;
+    transition: color var(--motion-color) var(--motion-ease);
 }
 
 .tab-link:hover {
@@ -940,32 +881,17 @@
 
 .tab-link.active {
     color: color-mix(in srgb, var(--themecolor) 72%, var(--text-color));
-    letter-spacing: 0.035em;
 }
 
 .tab-indicator {
+    background: var(--themecolor);
     position: absolute;
     bottom: -1px;
     height: 2px;
     border-radius: 2px;
     transition:
-        transform .42s cubic-bezier(0.345, 0.045, 0.345, 1),
-        width .42s cubic-bezier(0.345, 0.045, 0.345, 1);
-    will-change: transform, width
-}
-
-.tab-header.dir-right .tab-indicator {
-    background: linear-gradient(90deg,
-            var(--themecolor) 0%,
-            color-mix(in srgb, var(--themecolor) 65%, var(--card-color)) 55%,
-            color-mix(in srgb, var(--themecolor) 35%, var(--card-color)) 100%);
-}
-
-.tab-header.dir-left .tab-indicator {
-    background: linear-gradient(270deg,
-            var(--themecolor) 0%,
-            color-mix(in srgb, var(--themecolor) 65%, var(--card-color)) 55%,
-            color-mix(in srgb, var(--themecolor) 35%, var(--card-color)) 100%);
+        transform var(--motion-page) var(--motion-ease),
+        width var(--motion-page) var(--motion-ease);
 }
 
 .tab-content {
@@ -981,19 +907,7 @@
     display: block;
 }
 
-.tab-pane.active>*:first-child {
-    margin-top: 0;
-    transform: translateY(-6px);
-    opacity: 0;
-    animation: tab-content-in .45s ease forwards;
-}
-
-@keyframes tab-content-in {
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
+.tab-pane.active > *:first-child { margin-top: 0; }
 
 @media (max-width: 768px) {
     .tab-header {
@@ -1004,22 +918,6 @@
         padding: 16px 18px;
     }
 }
-
-html[data-theme="dark"] .tab-header.dir-right .tab-indicator {
-    background: linear-gradient(90deg,
-            color-mix(in srgb, var(--themecolor) 92%, #fff) 0%,
-            color-mix(in srgb, var(--themecolor) 65%, var(--card-color)) 55%,
-            color-mix(in srgb, var(--themecolor) 40%, var(--card-color)) 100%);
-}
-
-html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
-    background: linear-gradient(270deg,
-            color-mix(in srgb, var(--themecolor) 92%, #fff) 0%,
-            color-mix(in srgb, var(--themecolor) 65%, var(--card-color)) 55%,
-            color-mix(in srgb, var(--themecolor) 40%, var(--card-color)) 100%);
-}
-
-
 
 .bilibili-card {
     width: 100%;
@@ -1093,10 +991,10 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
             var(--background-color));
     border: 1px solid var(--border-color);
     transition:
-        transform .2s ease,
-        border-color .25s ease,
-        background-color .25s ease,
-        color .25s ease;
+        transform var(--motion-feedback) var(--motion-ease),
+        border-color var(--motion-color) var(--motion-ease),
+        background-color var(--motion-color) var(--motion-ease),
+        color var(--motion-color) var(--motion-ease);
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -1113,7 +1011,7 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
 }
 
 .cloud-item:active {
-    transform: scale(0.96);
+    transform: scale(0.98);
     border-color: color-mix(in srgb,
             var(--themecolor) 55%,
             var(--border-color));
@@ -1204,7 +1102,7 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
 #toc .li {
     border: 1px solid var(--background-color);
     border-radius: 5px;
-    transition: border-color .3s ease, background-color .3s ease;
+    transition: border-color var(--motion-color) var(--motion-ease), background-color var(--motion-color) var(--motion-ease);
 }
 
 #toc .li:hover {
@@ -1213,7 +1111,7 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
 }
 
 #toc .li:active {
-    transform: scale(0.96);
+    transform: scale(0.98);
 }
 
 #toc .toc-a {
@@ -1243,7 +1141,7 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
     height: 20px;
     line-height: 2;
     background: var(--themecolor);
-    transition: transform 0.3s ease;
+    transition: transform var(--motion-feedback) var(--motion-ease);
 }
 
 .toc-a {
@@ -1284,7 +1182,7 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
     background-color: var(--card-color);
     border-radius: 0.65rem;
     border: 1px solid var(--border-color);
-    transition: border-color .25s ease, background-color .25s ease;
+    transition: border-color var(--motion-color) var(--motion-ease), background-color var(--motion-color) var(--motion-ease);
 }
 
 .search-input {
@@ -1295,7 +1193,7 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
     font-size: 0.95rem;
     padding: 10px 12px;
     color: var(--text-color);
-    transition: color .3s ease;
+    transition: color var(--motion-color) var(--motion-ease);
 }
 
 .search-input::placeholder {
@@ -1311,7 +1209,7 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
     align-items: center;
     justify-content: center;
     color: var(--text2-color);
-    transition: color .25s ease;
+    transition: color var(--motion-color) var(--motion-ease);
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -1391,7 +1289,7 @@ html[data-theme="dark"] .tab-header.dir-left .tab-indicator {
 .right-sidebar.has-toc { position: absolute; }
 .right-sidebar.has-toc .cloud-section, .right-sidebar.has-toc .search-section { display: block; }
 .right-sidebar.has-toc .toc-section.sticky { max-height: 100dvh; overflow-y: auto; }
-.siderbar { transition: transform .18s ease; }
+.siderbar { transition: transform var(--motion-feedback) var(--motion-ease); }
 .tab-link { font: inherit; border: 0; background: none; color: inherit; }
 [hidden] { display: none !important; }
 :focus-visible { outline: 2px solid var(--themecolor); outline-offset: 3px; }

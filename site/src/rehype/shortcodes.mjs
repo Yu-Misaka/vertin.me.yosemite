@@ -120,7 +120,7 @@ export function compileShortcodes(source) {
           title +
           '<span class="icon icon-down-open"></span>' +
           '</button>' +
-          '<div class="collapsible-content" style="max-height: 0; overflow: hidden;">' +
+          '<div class="collapsible-content">' +
           '<div class="collapsible-details">' +
           body +
           '</div>' +

@@ -119,7 +119,8 @@ Frontmatter 字段（见 `site/src/content.config.ts`）：
 ## 客户端架构与验证
 
 - `site/src/scripts/app.js` 是唯一页面生命周期入口。每次页面替换后初始化一次，离开时通过 AbortController 清理监听器、观察器及异步工作。
-- `site/src/scripts/animations.js` 只负责首屏轻量入场与封面共享元素；后续导航由 Astro 原生 View Transitions 完成。过渡不会隐藏正文或改变文章高度，减少动态效果模式下直接切换。
+- `site/src/scripts/animations.js` 统一编排首屏、普通导航、方向分页与可见封面衔接，导航快照和滚动恢复仍由 Astro ClientRouter 负责。连续导航会取消旧过渡，锚点和不可见封面使用普通过渡。所有动效令牌在 `site/src/styles/motion.css` 定义，减少动态效果模式下直接切换。完整设计与验收记录见 [动效重编排方案](docs/motion-design.md)。
+- 左侧播放器与右侧搜索、分类、标签在导航间保留；只有目录随文章切换。Tabs 与折叠内容使用统一节奏，动画结束或页面离开时释放局部 effect。
 - 交互按职责拆分为 `theme`、`navigation`、`toc`、`widgets`、`search` 与 `integrations`。客户端代码和主要 CSS 经 Vite 打包、压缩及缓存；搜索只在搜索页加载。
 - 正文短代码、公式、图注、图片尺寸及 URL 链接均在构建时生成。图片使用原生懒加载，首屏封面优先加载。
 - 播放器在空闲时加载，音频点击播放后才下载，并在导航间保留。评论组件接近视口才加载，HTTP 评论数查询不加载评论 UI；Twikoo 客户端固定为与现有服务兼容的 1.6.44，以同站静态资源原样加载，避免旧 Vue UMD 库再次打包的兼容问题。其注入样式会在导航间保留。

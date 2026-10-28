@@ -1,39 +1,105 @@
-/* Navigation has one owner: Astro's native snapshots. The live document stays
-   fully laid out throughout preparation, cancellation and history traversal. */
+/* One vocabulary for navigation, local interactions and theme changes. */
 :root {
-  /* Keep the persisted header outside the captured/hit-test-suppressed tree. */
+  --motion-press: 120ms;
+  --motion-feedback: 160ms;
+  --motion-local: 180ms;
+  --motion-theme: 200ms;
+  --motion-page: 220ms;
+  --motion-enter: 280ms;
+  --motion-cover: 300ms;
+  --motion-ease: cubic-bezier(.2,.8,.2,1);
+  --motion-exit: cubic-bezier(.4,0,1,1);
+  --motion-color: var(--motion-feedback);
   view-transition-name: none;
-  --page-motion-duration: 220ms;
-  --page-motion-easing: cubic-bezier(.2,.8,.2,1);
   scrollbar-gutter: stable;
 }
+html[data-theme-changing] { --motion-color: var(--motion-theme); }
+html[data-motion] { scroll-behavior: auto; }
+.header-title, .header-about, .post-title, .post-content, .post-meta,
+.section-header, .toc-a, .tab-content, .collapsible-panel, .license-info-card {
+  transition: color var(--motion-color) var(--motion-ease),
+    background-color var(--motion-color) var(--motion-ease),
+    border-color var(--motion-color) var(--motion-ease);
+}
 
-::view-transition-old(root), ::view-transition-new(root) { animation: none; }
-/* The header stays interactive so a second navigation can interrupt the first. */
+/* Persistent navigation and sidebar utilities remain live and interactive. */
+.header, [data-sidebar-static] { view-transition-name: none !important; }
 ::view-transition { pointer-events: none; }
-::view-transition-group(content) { animation-duration: var(--page-motion-duration); }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-group(content), ::view-transition-group(article-toc) {
+  /* A scrolled list and a long article have very different document bounds.
+     Keep the outgoing snapshot in its original viewport position instead of
+     interpolating the whole document's geometry across that distance. */
+  animation: none;
+}
 ::view-transition-old(content) {
-  animation: content-out 120ms ease both;
+  width: var(--motion-content-old-width, 100%);
+  transform: translate(var(--motion-content-old-x, 0px), var(--motion-content-old-y, 0px));
+  animation: content-out var(--motion-press) var(--motion-exit) both;
 }
 ::view-transition-new(content) {
-  animation: content-in var(--page-motion-duration) var(--page-motion-easing) both;
+  animation: content-in var(--motion-page) var(--motion-ease) both;
 }
+:root[data-motion='next'] { --page-enter-x: 12px; --page-enter-y: 0px; }
+:root[data-motion='previous'] { --page-enter-x: -12px; --page-enter-y: 0px; }
+:root[data-motion='fade'] { --page-enter-x: 0px; --page-enter-y: 0px; }
+:root[data-motion-cover='shared'] { --page-enter-x: 0px; --page-enter-y: 0px; }
+:root[data-motion-cover='shared']::view-transition-new(content) {
+  animation: content-in var(--motion-local) var(--motion-ease) 70ms both;
+}
+::view-transition-old(article-toc) {
+  width: var(--motion-toc-old-width, 100%);
+  transform: translate(var(--motion-toc-old-x, 0px), var(--motion-toc-old-y, 0px));
+  animation: content-out var(--motion-press) ease both;
+}
+::view-transition-new(article-toc) { animation: auxiliary-in var(--motion-local) var(--motion-ease) 40ms both; }
+
 ::view-transition-group(post-cover) {
-  animation-duration: 280ms;
-  animation-timing-function: var(--page-motion-easing);
-}
-::view-transition-old(post-cover), ::view-transition-new(post-cover) {
-  height: 100%;
-  object-fit: cover;
+  animation-duration: var(--motion-cover);
+  animation-timing-function: var(--motion-ease);
+  overflow: clip;
   border-radius: .85rem .85rem 0 0;
 }
+::view-transition-old(post-cover), ::view-transition-new(post-cover) {
+  width: 100%; height: 100%; object-fit: cover;
+  animation-duration: var(--motion-local);
+  mix-blend-mode: normal;
+}
+/* Unmatched/offscreen destinations fade in place rather than crossing the page. */
+:root[data-motion-cover='fade']::view-transition-group(post-cover) { animation: none; }
+:root[data-motion-cover='fade']::view-transition-old(post-cover) {
+  animation: content-out var(--motion-press) ease both;
+}
 @keyframes content-out { to { opacity: 0; } }
-@keyframes content-in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes content-in {
+  from { opacity: 0; transform: translate(var(--page-enter-x, 0px), var(--page-enter-y, 8px)); }
+}
+@keyframes auxiliary-in { from { opacity: 0; } }
+
+/* Controls keep typography and surrounding layout stationary. */
+.theme-toggle #theme-icon { display: inline-block; }
+.nav-indicator:not([data-positioned]), .tab-indicator:not([data-positioned]),
+.siderbar[data-jump] { transition: none; }
+.post-media { overflow: hidden; }
+.post--index:not(.post--single) .post-media img {
+  transition: transform var(--motion-page) var(--motion-ease), filter var(--motion-color) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .post--index:not(.post--single):hover .post-media img { transform: scale(1.015); }
+}
+@media (hover: none) {
+  .alert-box:hover { transform: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  html, html[data-motion] { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    transition-delay: 0ms !important;
+  }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
   html .medium-zoom-image, html .medium-zoom-overlay { transition: none !important; }
 }
-

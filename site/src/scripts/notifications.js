@@ -1,3 +1,5 @@
+import { motionDuration, prefersReducedMotion } from './animations.js';
+
 export function greet(signal) {
   try {
     if (sessionStorage.getItem('mox_greeted')) return;
@@ -28,9 +30,11 @@ export function greet(signal) {
   container.append(notification);
   document.body.append(container);
   const hide = () => {
+    clearTimeout(timer);
+    clearTimeout(removal);
     notification.classList.remove('show');
     notification.classList.add('hide');
-    removal = setTimeout(() => container.remove(), 300);
+    removal = setTimeout(() => container.remove(), prefersReducedMotion() ? 0 : motionDuration('--motion-local', 180));
   };
   let removal;
   const timer = setTimeout(hide, 5000);
