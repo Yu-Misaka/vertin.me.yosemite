@@ -909,6 +909,11 @@
 
 .tab-pane.active > *:first-child { margin-top: 0; }
 
+/* Align plain CV panels with the timeline's original 40px + 24px inset. */
+.post-content--cv .tab-pane:not(:has(> .timeline)) {
+    padding-left: 64px;
+}
+
 @media (max-width: 768px) {
     .tab-header {
         white-space: nowrap;

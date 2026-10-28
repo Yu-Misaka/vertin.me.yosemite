@@ -16,6 +16,9 @@ setupTransitions(app.signal);
 document.addEventListener('site:before-navigation', () => cancelEntry(), { signal: app.signal });
 
 function initPage() {
+  // The header persists independently of the page root. Resync its selection
+  // on every router completion, including a repeated load of the same root.
+  initNavigation();
   const root = document.getElementById('page-content');
   if (!root || (root === currentRoot && !page?.signal.aborted)) return;
   page?.abort();
@@ -23,7 +26,6 @@ function initPage() {
   page = new AbortController();
   const { signal } = page;
   syncTheme();
-  initNavigation(signal);
   initWidgets(root, signal);
   initToc(root, signal);
   initGoTop(signal);

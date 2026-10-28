@@ -4,7 +4,8 @@ import { site } from "../config/site";
 import { imageMarkup } from '../utils/image-markup.mjs';
 
 const current = Astro.props.current ?? "/";
-const isActive = (href: string) => (current === href ? " nav-item-current" : "");
+const normalize = (path: string) => path.replace(/\/+$/, '') || '/';
+const isActive = (href: string) => normalize(current) === normalize(href);
 const aplayer = site.aplayer;
 const customCode = await imageMarkup(site.leftSideCustomCode);
 
@@ -53,8 +54,8 @@ const aplayerConfig = JSON.stringify({
     <div class="nav header-item left-side-custom-code" set:html={customCode} />
     <nav class="nav header-item header-nav">
       {navItems.map((item) => (
-        <span class={`nav-item${isActive(item.href)}`}>
-          <a href={item.href} title={item.label}>
+        <span class={`nav-item${isActive(item.href) ? ' nav-item-current' : ''}`}>
+          <a href={item.href} title={item.label} aria-current={isActive(item.href) ? 'page' : undefined}>
             <span>{item.label}</span>
           </a>
         </span>

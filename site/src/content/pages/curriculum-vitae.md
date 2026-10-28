@@ -2,7 +2,7 @@
 title: "简历 Curriculum Vitae"
 order: 5
 cover: "/persistent-image/illust3.webp"
-date: 2024-10-28
+date: 2026-10-28
 ---
 
 [tabs]
@@ -11,59 +11,82 @@ date: 2024-10-28
 
 [timeline]
 
-[timeline-event date="Sep 2021 – Jun 2025" title="**Xi’an Jiaotong University, China**"]
+[timeline-event date="Aug 2025 – Aug 2026" title="**National University of Singapore, Singapore**"]
 
-*Bachelor of Mathematics and Applied Mathematics*
-- Final GPA: 3.39/4.3 (84.31/100)  
-- Abstract Algebra (94/100), Advanced Algebra and Analytic Geometry (93/100)  
-- Language Proficiency: IELTS 8.0/9.0, CET6 646/710
+*Master of Science in Mathematics*
+- Selected coursework: Mathematical Logic, Commutative and Homological Algebra, Representation Theory.
 
 [/timeline-event]
 
-[timeline-event date="Aug 2025 – Present" title="**National University of Singapore, Singapore**"]
+[timeline-event date="Sep 2021 – Jun 2025" title="**Xi’an Jiaotong University, China**"]
 
-*Master of Science in Mathematics*
+*Bachelor of Science in Mathematics and Applied Mathematics*
+
+[/timeline-event]
+
+[timeline-event date="Jun 2023 – Aug 2023" title="**University of Wisconsin–Madison, US**"]
+
+*Exchange program*
+- Introduction to Cryptography and Introductory Combinatorics.
 
 [/timeline-event]
 
 [/timeline]
 
 [/tab]
-[tab title="Research and Study Experience"]
+[tab title="Selected Work"]
+
+### Formalization of Nilpotent Orbit Closures
+
+*2025 – Present*
+
+Co-authored a Lean 4 formalization of the combinatorial framework for nilpotent orbit closure relations in classical real Lie groups, following Đoković’s work.
+
+[Code: YoungDiagram](https://github.com/SamuelE0271194/YoungDiagram)
+
+### A Formal Proof of the Sticky-Kakeya Theorem
+
+*2026*
+
+Co-authored a Lean 4 formalization of Theorem 5.2 in Wang and Zahl’s work on sticky Kakeya sets, subsequently incorporated into a machine-checked proof of the full three-dimensional Kakeya conjecture. The formalization and its contributors were acknowledged in Guth, Wang, and Zahl’s streamlined proof.
+
+[Code: 3d-sticky-kakeya](https://github.com/M32026/3d-sticky-kakeya) · [Paper: arXiv:2601.14411](https://arxiv.org/abs/2601.14411)
+
+### EdgeBench
+
+*2026*
+
+Co-authored *EdgeBench: Unveiling Scaling Laws of Learning from Real-World Environments*. Contributed Lean-based evaluation infrastructure for formal mathematics, including partial-credit scoring and checks for axiom dependencies, modified theorem statements, and tampered definitions.
+
+[Paper: arXiv:2607.05155](https://arxiv.org/abs/2607.05155)
+
+[/tab]
+[tab title="Research and Experience"]
 
 [timeline]
 
-[timeline-event date="Jun 2023 – Aug 2023" title="**University of Wisconsin – Madison, US**"]
+[timeline-event date="May 2026 – Present" title="**ByteDance, China**"]
 
-Exchange program
-- GPA: 4.0/4.0  
-- Courses Studied: Introduction to Cryptography (4.0/4.0), Intro-Combinatorics (4.0/4.0).  
+*Intern, Formal Mathematics and Forward-Deployed Engineering*
+- Contributed Lean/mathlib formalizations on spectral bounds, symplectic matrices, and character theory.
+- Completed a formalization of the large sieve and the classical Bombieri–Vinogradov theorem; code is pending company approval for public release.
+- Developing long-horizon evaluation benchmarks with the Seed-Edge team.
 
 [/timeline-event]
 
-[timeline-event date="Jan 2024 - Present" title="**Peking University, China**"]
+[timeline-event date="Jan 2024 – Present" title="**Peking University, China**"]
 
-*Beijing International Center for Mathematical Research*  
-- Seminar:
-  - (Jan 2024)
-    - AI for Mathematics: Mathematics formalization and theorem proving
-  - (Jul 2024)
-    - AI for Mathematics: Formalization on abstract algebra
-    - (**Awarded the special prize and offered chances for further cooperation**)
-- Conference & Workshop:
-  - (Sep 2024)
-    - AI for Mathematics Workshop on Lean, Automated Reasoning and Beyond
-  - (joint with Westlake University, Jan 2025)
-    - Conference on AI for Math and formalization
-  - (May 2025)
-    - RUC&PKU joint Lean Workshop
-- Research projects: (GitHub username: Yu-Misaka)
-  - [*Adding Stacks Project tags (Merged into master)*](https://github.com/leanprover-community/mathlib4/pull/16105)
-  - [*Formalization of Jacobson-Noether theorem (Merged into master)*](https://github.com/leanprover-community/mathlib4/pull/16525)
-  - [*Formalization of filtered and graded ring (Work in progress)*](https://github.com/leanprover-community/mathlib4/pull/26869)
-  - [*Formalizing Koszul Complex (Work in progress)*](https://github.com/mbkybky/KoszulComplex)
-- (joint program with Ubiquant inc., Mar 2025 - Present)
-  - Full-time internship on formalization and AI
+*Research Collaboration*
+- Contributed to Lean/mathlib, including [Stacks Project tags](https://github.com/leanprover-community/mathlib4/pull/16105), the [Jacobson–Noether theorem](https://github.com/leanprover-community/mathlib4/pull/16525), and filtered homomorphisms and exactness of associated graded sequences ([#22208](https://github.com/leanprover-community/mathlib4/pull/22208), [#22972](https://github.com/leanprover-community/mathlib4/pull/22972)).
+- Participated in Lean and AI for mathematics workshops, including Formalizing Class Field Theory (Oxford, 2025) and Metaprogramming in Lean 4 (Zhejiang University, 2026).
+
+[/timeline-event]
+
+[timeline-event date="Mar 2025 – Nov 2025" title="**Peking University & Ubiquant, China**"]
+
+*Intern, AI for Mathematics*
+- Developed mathematical solutions and Lean 4 formalizations in abstract algebra, category theory, and commutative algebra.
+- Helped build formalized datasets for automated reasoning and theorem proving.
 
 [/timeline-event]
 
@@ -72,7 +95,7 @@ Exchange program
 [/tab]
 [tab title="Contact"]
 
-&emsp; You can mail to hi@vertin.me or <b>use the form below</b>.
+You can also reach me at [hi@vertin.me](mailto:hi@vertin.me) or use the form below.
 
 [/tab]
 

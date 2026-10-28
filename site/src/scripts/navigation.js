@@ -1,10 +1,22 @@
-const normalize = path => path.replace(/\/$/, '') || '/';
+const normalize = path => path.replace(/\/+$/, '') || '/';
 
-export function initNavigation(signal) {
+// The address bar is authoritative for menu destinations. The page's declared
+// parent is only used for articles, pagination and other non-menu destinations.
+export function activeNavigationPath(pathname, parent, destinations) {
+  const paths = destinations.map(normalize);
+  const exact = normalize(pathname);
+  if (paths.includes(exact)) return exact;
+  if (parent && paths.includes(normalize(parent))) return normalize(parent);
+  return null;
+}
+
+export function initNavigation() {
   const nav = document.querySelector('.header-nav');
   if (!nav) return;
   const items = [...nav.querySelectorAll('.nav-item')];
-  const path = normalize(document.getElementById('page-content')?.dataset.navCurrent || location.pathname);
+  const path = activeNavigationPath(location.pathname,
+    document.getElementById('page-content')?.dataset.navCurrent,
+    items.map(item => new URL(item.querySelector('a').href).pathname));
   const active = items.find(item => normalize(new URL(item.querySelector('a').href).pathname) === path);
   items.forEach(item => {
     item.classList.toggle('nav-item-current', item === active);
@@ -12,32 +24,6 @@ export function initNavigation(signal) {
     if (item === active) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   });
-  const indicator = nav.querySelector('.nav-indicator') || nav.appendChild(Object.assign(document.createElement('div'), { className: 'nav-indicator' }));
-  let frame = 0;
-  const update = () => {
-    cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(() => {
-      if (!active || !active.isConnected) {
-        indicator.classList.remove('active');
-        return;
-      }
-      const rect = active.getBoundingClientRect();
-      const container = nav.getBoundingClientRect();
-      indicator.style.width = `${rect.width}px`;
-      indicator.style.height = `${rect.height}px`;
-      indicator.style.transform = `translate(${rect.left - container.left}px, ${rect.top - container.top}px)`;
-      indicator.classList.add('active');
-      // Initial measurement and responsive reflow should not fly from (0, 0).
-      if (!indicator.dataset.positioned) {
-        indicator.getBoundingClientRect();
-        indicator.dataset.positioned = '';
-      }
-    });
-  };
-  const observer = new ResizeObserver(update);
-  observer.observe(nav);
-  items.forEach(item => observer.observe(item));
-  document.fonts.ready.then(() => { if (!signal.aborted) update(); });
-  signal.addEventListener('abort', () => { observer.disconnect(); cancelAnimationFrame(frame); }, { once: true });
-  update();
+  // Clean up the former floating indicator in a persisted header after HMR.
+  nav.querySelector('.nav-indicator')?.remove();
 }

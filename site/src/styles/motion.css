@@ -78,7 +78,7 @@ html[data-motion] { scroll-behavior: auto; }
 
 /* Controls keep typography and surrounding layout stationary. */
 .theme-toggle #theme-icon { display: inline-block; }
-.nav-indicator:not([data-positioned]), .tab-indicator:not([data-positioned]),
+.tab-indicator:not([data-positioned]),
 .siderbar[data-jump] { transition: none; }
 .post-media { overflow: hidden; }
 .post--index:not(.post--single) .post-media img {
