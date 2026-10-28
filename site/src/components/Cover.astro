@@ -1,0 +1,22 @@
+---
+import { imageMetadata } from '../utils/image-metadata.mjs';
+
+interface Props {
+  src: string;
+  eager?: boolean;
+}
+const { src, eager = false } = Astro.props;
+const { width, height } = await imageMetadata(src);
+---
+<figure class="post-media">
+  <img
+    itemprop="image"
+    src={src}
+    alt="头图"
+    width={width}
+    height={height}
+    loading={eager ? 'eager' : 'lazy'}
+    decoding="async"
+    fetchpriority={eager ? 'high' : 'auto'}
+  />
+</figure>

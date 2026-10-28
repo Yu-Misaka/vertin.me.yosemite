@@ -1,10 +1,12 @@
 ---
 import { getCollection } from "astro:content";
 import { site } from "../config/site";
+import { imageMarkup } from '../utils/image-markup.mjs';
 
 const current = Astro.props.current ?? "/";
 const isActive = (href: string) => (current === href ? " nav-item-current" : "");
 const aplayer = site.aplayer;
+const customCode = await imageMarkup(site.leftSideCustomCode);
 
 const pages = await getCollection("pages");
 const pageItems = pages
@@ -28,7 +30,7 @@ const aplayerConfig = JSON.stringify({
   audio: aplayer.audio
 });
 ---
-<header class="header" data-js="header" data-pagefind-ignore>
+<header transition:persist="site-header" class="header" data-js="header" data-pagefind-ignore>
   <div class="wrapper header-wrapper header-title">
     <a href={site.logoIndexUrl} class="avatar-link" aria-label={site.author.name}>
       <span class="el-avatar el-avatar--circle avatar-hover-effect">
@@ -48,7 +50,7 @@ const aplayerConfig = JSON.stringify({
     </a>
     <div class="header-title">{site.titleIndex}</div>
     <p itemprop="description" class="header-item header-about">{site.description}</p>
-    <div class="nav header-item left-side-custom-code" set:html={site.leftSideCustomCode} />
+    <div class="nav header-item left-side-custom-code" set:html={customCode} />
     <nav class="nav header-item header-nav">
       {navItems.map((item) => (
         <span class={`nav-item${isActive(item.href)}`}>
@@ -59,32 +61,13 @@ const aplayerConfig = JSON.stringify({
       ))}
     </nav>
     <div class="theme-toggle-container">
-      <button class="theme-toggle" onclick="toggleTheme()" aria-label="日夜切换">
+      <button class="theme-toggle" aria-label="日夜切换">
         <span id="theme-icon" class="icon-moon-inv"></span>
       </button>
     </div>
     <div class="nav header-item left-side-custom-code header-spacer">&emsp;</div>
     {aplayer.enabled ? (
-      <div class="aplayer-shell" id="aplayer" data-aplayer-config={aplayerConfig} transition:persist="aplayer">
-        <script is:inline>{`
-          window.__aplayerConfig = {
-            theme: ${JSON.stringify(aplayer.theme)},
-            listFolded: ${JSON.stringify(aplayer.listFolded)},
-            listMaxHeight: ${JSON.stringify(aplayer.listMaxHeight)},
-            audio: ${JSON.stringify(aplayer.audio)}
-          };
-          if (typeof window.__initAPlayer === 'function') {
-            window.__initAPlayer();
-          }
-        `}</script>
-        <style>
-          {`
-            .aplayer .aplayer-list {
-              max-height: 96px !important;
-              overflow-y: auto !important;
-            }
-          `}
-        </style>
+      <div class="aplayer-shell" id="aplayer" data-aplayer-config={aplayerConfig}>
       </div>
     ) : null}
   </div>

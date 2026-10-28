@@ -93,14 +93,14 @@ Frontmatter 字段（见 `site/src/content/config.ts`）：
 
 ## 数学公式（KaTeX）
 
-已在 `site/src/layouts/BaseLayout.astro` 中引入 KaTeX（auto-render）。
+公式通过 remark-math / rehype-katex 在构建时渲染，页面切换无需刷新，也不再下载浏览器端公式渲染脚本。
 
 - 行内：`$ ... $`
 - 块级：`$$ ... $$`
 
 ## 主题短代码（Shortcodes）
 
-短代码由 `site/public/js/PureSuck_Shortcodes.js` 在前端渲染，写在 Markdown 正文中即可使用（区分大小写）：
+短代码由 `site/src/rehype/rehype-content.mjs` 在构建时编译，现有 Markdown 写法保持兼容。代码块中的短代码示例不会被转换：
 
 - 提示框：`[alert type="red"]内容[/alert]`（`green/blue/yellow/red`）
 - 窗口：`[window type="..." title="..."]内容[/window]`
@@ -115,3 +115,35 @@ Frontmatter 字段（见 `site/src/content/config.ts`）：
 - B 站卡片：`[bilibili-card bvid="BV..."]`
 - 图片网格：`[PicGrid]...[/PicGrid]`
 
+
+## 客户端架构与验证
+
+- `site/src/scripts/app.js` 是唯一页面生命周期入口。每次页面替换后初始化一次，离开时通过 AbortController 清理监听器、观察器及异步工作。
+- `site/src/scripts/animations.js` 只负责首屏轻量入场与封面共享元素；后续导航由 Astro 原生 View Transitions 完成。过渡不会隐藏正文或改变文章高度，减少动态效果模式下直接切换。
+- 交互按职责拆分为 `theme`、`navigation`、`toc`、`widgets`、`search` 与 `integrations`。客户端代码和主要 CSS 经 Vite 打包、压缩及缓存；搜索只在搜索页加载。
+- 正文短代码、公式、图注、图片尺寸及 URL 链接均在构建时生成。图片使用原生懒加载，首屏封面优先加载。
+- 播放器在空闲时加载，音频点击播放后才下载，并在导航间保留。评论组件接近视口才加载，HTTP 评论数查询不加载评论 UI；Twikoo 客户端固定为与现有服务兼容的 1.6.44，以同站静态资源原样加载，避免旧 Vue UMD 库再次打包的兼容问题。其注入样式会在导航间保留。
+- 字体构建插件从现有字体分片中选择源码和文章需要的字符范围，新增内容会自动更新。未覆盖的评论生僻字使用系统字体回退；原始字体及许可保留在 `site/public/fonts/`。
+
+在 `site/` 目录运行：
+
+```bash
+npm ci
+npm run check
+npm test
+npm run build
+npm run verify:build
+npm run preview
+```
+
+`verify:build` 检查全部生成页中的重复 ID、公式、图片尺寸、旧脚本引用和搜索索引。CI 同样运行回归测试和构建产物验证。
+
+浏览器回归重点：首页进入长文章、目录跳转、返回列表、连续切换导航、浏览器前进后退、简历 Tabs（含方向键）、文章折叠、搜索、图片缩放、评论区，以及移动端和减少动态效果设置。性能变化应在同一浏览器、设备和网络条件下通过 Performance 轨迹比较；构建大小不代表实际帧率。
+
+### 本轮验证记录（2026-10-28）
+
+- Astro 更新至 5.18.2，Vite 更新至 6.4.5（锁文件）；清理未使用的 Vue 集成和旧客户端实现。
+- 12 项回归测试、TypeScript、静态构建、Pagefind 和全部生成页验证通过：27 页、120 个预渲染公式、210 张图片、5 个 Tabs 标签。
+- 字体声明从 228,654 字节减至 42,791 字节（约 81%）；这是资源体积比较，不是帧率测量。
+- 浏览器检查覆盖连续鼠标导航、前进后退、搜索、长文目录、Tabs、折叠、图片缩放、评论跨页复用，以及 390px 手机视口。最终评论组件跨页回归无警告或错误。
+- 兼容范围依赖更新后，npm audit 仍有 9 项历史告警（5 low、3 high、1 critical），部分修复涉及跨主版本迁移。本轮保留 Astro 5 静态生成架构，未执行强制跨版本修复；这些告警尚未清零。后续依赖维护应结合上游公告评估，而不能将静态部署视为告警已经解决。

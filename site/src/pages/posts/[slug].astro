@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import Cover from "../../components/Cover.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { site } from "../../config/site";
 import Comments from "../../components/Comments.astro";
@@ -40,7 +41,7 @@ const tocHtml = buildTocHtml(headings);
               <img
                 src={site.author.avatar}
                 alt="作者头像"
-                class="avatar-item avatar-img"
+                class="avatar-item avatar-img" width="32" height="32"
                 loading="eager"
                 decoding="async"
                 fetchpriority="low"
@@ -51,16 +52,7 @@ const tocHtml = buildTocHtml(headings);
         </header>
 
         {hasImg ? (
-          <figure class="post-media single">
-            <img
-              itemprop="image"
-              src={post.data.cover}
-              alt="头图"
-              loading="eager"
-              decoding="async"
-              fetchpriority="high"
-            />
-          </figure>
+          <Cover src={post.data.cover!} eager />
         ) : null}
 
         <section class="post-item post-body">

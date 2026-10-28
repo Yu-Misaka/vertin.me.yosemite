@@ -7,6 +7,13 @@ import { getThemeTokens } from "../config/theme";
 import SpeedInsights  from "@vercel/speed-insights/astro";
 import Analytics from '@vercel/analytics/astro';
 import { ClientRouter } from "astro:transitions";
+import '../styles/theme.css';
+import '../styles/components.css';
+import '../styles/notifications.css';
+import '../styles/motion.css';
+import 'katex/dist/katex.min.css';
+import 'aplayer/dist/APlayer.min.css';
+import 'virtual:site-fonts.css';
 
 const title = Astro.props.title;
 const description = Astro.props.description ?? site.description;
@@ -30,7 +37,6 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
     <meta name="description" content={description} />
     <slot name="head" />
 
-    <link rel="preconnect" href="https://mirrors.sustech.edu.cn" crossorigin />
 
     <style
       is:inline
@@ -39,50 +45,20 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
     />
 
     <script is:inline>
-      window.THEME_URL = "";
-    </script>
-
-    <script is:inline data-page-type={pageType}>
-      (function () {
-        const scriptEl = document.currentScript;
-        const pageType = scriptEl instanceof HTMLScriptElement ? scriptEl.dataset.pageType : null;
-
-        const cookieMatch = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/);
-        const cookieTheme = cookieMatch ? cookieMatch[1] : null;
-        const localTheme = localStorage.getItem("theme");
-        let initialTheme = cookieTheme || localTheme || "auto";
-        if (initialTheme === "auto") {
-          initialTheme = window.matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light";
-        }
-        document.documentElement.setAttribute("data-theme", initialTheme);
+      (() => {
+        let saved = 'auto';
         try {
-          if (window.matchMedia && !window.matchMedia("(prefers-reduced-motion:reduce)").matches) {
-            document.documentElement.classList.add(
-              pageType === "post"
-                ? "ps-preload-post-enter"
-                : pageType === "page"
-                  ? "ps-preload-page-enter"
-                  : "ps-preload-list-enter"
-            );
-          }
-        } catch (e) {}
+          saved = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/)?.[1] || localStorage.getItem('theme') || 'auto';
+        } catch {}
+        document.documentElement.dataset.theme = saved === 'auto'
+          ? (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light')
+          : saved;
       })();
     </script>
-
-    <link rel="preload" href="/css/PureSuck_Style.css" as="style" />
-    <link rel="stylesheet" href="/css/PureSuck_Style.css" />
-
-    <link rel="preload" href="/css/fontello.css" as="style" />
     <link rel="stylesheet" href="/css/fontello.css" />
+    <link rel="icon" href="/favicon.webp" type="image/webp" />
+    <style is:inline id="twikoo-styles" data-astro-transition-persist="twikoo-styles"></style>
 
-    <link rel="icon" href="/favicon.webp" type="image/x-icon" />
-
-    <link rel="stylesheet" href="/css/PureSuck_Module.css" />
-    <link rel="stylesheet" href="/css/MoxDesign.css" />
-    <link rel="stylesheet" href="/css/animations/index.css" />
-    <link rel="stylesheet" href="/fonts/result.css" />
-    <link rel="stylesheet" href="/css/APlayer.min.css" />
-    <link rel="stylesheet" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/KaTeX/0.16.9/katex.min.css" />
 
     <!-- medium-zoom CSS (included statically to persist across view transitions) -->
     <style is:inline>
@@ -106,76 +82,16 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
       />
     ) : null}
 
-    <script defer src="/js/lib/medium-zoom.min.js"></script>
-    <script defer src="/js/PureSuck_Shortcodes.js"></script>
-    <script defer src="/js/PureSuck_Module.js"></script>
-    <script defer src="/js/MoxDesign.js"></script>
-    <script defer src="/js/PureSuck_LazyLoad.js"></script>
-    <script defer src="/js/PureSuck_Pagefind.js"></script>
-    <script defer src="/js/PureSuck_Twikoo.js"></script>
-    <script defer src="/js/PureSuck_ViewTransitions.js"></script>
-    <script defer src="/js/PureSuck_APlayer.js"></script>
-    <script defer src="/js/PureSuck_Fallback.js"></script>
-
-    <ClientRouter />
-
-    <script defer src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-    <script defer src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
-    <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/aplayer/1.10.1/APlayer.min.js"></script>
-
-    <script defer type="text/javascript">
-      function renderLatex() {
-        if (typeof renderMathInElement !== "undefined") {
-          renderMathInElement(document.body, {
-            delimiters: [
-              { left: "$$", right: "$$", display: true },
-              { left: "$", right: "$", display: false }
-            ],
-            ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code"],
-            ignoredClasses: ["nokatex"]
-          });
-        }
-      }
-
-      window.renderLatex = renderLatex;
-
-      document.addEventListener("DOMContentLoaded", function () {
-        renderLatex();
-      });
-
-      document.addEventListener("astro:after-swap", function () {
-        renderLatex();
-      });
-    </script>
-
-    <script is:inline>
-      document.addEventListener("astro:page-load", () => {
-        if (sessionStorage.getItem("mox_greeted")) return;
-        sessionStorage.setItem("mox_greeted", "1");
-
-        const now = new Date();
-        const hour = now.getHours();
-        const timeStr = now.toLocaleString();
-
-        let greeting = "你好！";
-        if (hour < 6) greeting = "夜深了";
-        else if (hour < 12) greeting = "早上好";
-        else if (hour < 18) greeting = "下午好";
-        else greeting = "晚上好";
-
-        MoxNotification({
-          title: greeting,
-          duration: 5000,
-          message: "欢迎访问本站。<br>当前时间：" + timeStr
-        });
-      });
+    <ClientRouter fallback="swap" />
+    <script>
+      import '../scripts/app.js';
     </script>
   </head>
   <body>
     <div class="wrapper">
       <Header current={navCurrent} />
-      <div id="swup" data-ps-page-type={pageType}>
-        <main class="main">
+      <div id="page-content" data-ps-page-type={pageType}>
+        <main class="main" transition:name="content">
           <slot />
         </main>
         <Sidebar tocHtml={tocHtml} />

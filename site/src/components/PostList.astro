@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import { site } from "../config/site";
+import Cover from "./Cover.astro";
 import { getExcerpt } from "../utils/excerpt";
 
 type Props = {
@@ -14,14 +15,14 @@ type Props = {
 const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props as Props;
 ---
 <div class="wrapper">
-  {posts.map((post) => {
+  {posts.map((post, index) => {
     const hasImg = Boolean(post.data.cover);
     return (
       <article
-        class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item ps-enter-hidden-list`}
+        class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item`}
         data-ps-post-key={post.slug}
         data-protected="false"
-        data-swup-animation
+
       >
         <div class="post-inner">
           {site.show.cardCategory && post.data.category ? (
@@ -35,6 +36,7 @@ const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props as Prop
                   src={site.author.avatar}
                   alt="作者头像"
                   class="avatar-item avatar-img"
+                  width="32" height="32"
                   loading="lazy"
                   decoding="async"
                   fetchpriority="low"
@@ -45,16 +47,7 @@ const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props as Prop
           </header>
 
           {hasImg ? (
-            <figure class="post-media">
-              <img
-                itemprop="image"
-                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-                data-lazy-src={post.data.cover}
-                alt="头图"
-                decoding="async"
-                fetchpriority="auto"
-              />
-            </figure>
+            <Cover src={post.data.cover!} eager={index === 0} />
           ) : null}
 
           <section class="post-item post-body">
@@ -90,7 +83,7 @@ const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props as Prop
   })}
 </div>
 
-<nav class="nav main-pager ps-enter-hidden-list" data-js="pager" data-swup-animation>
+<nav class="nav main-pager" data-js="pager">
   <span class="nav-item-alt">第 {currentPage} 页 / 共 {totalPages} 页</span>
   <div class="nav nav--pager">
     {prevUrl ? (
@@ -103,6 +96,6 @@ const { posts, currentPage, totalPages, prevUrl, nextUrl } = Astro.props as Prop
   </div>
 </nav>
 
-<div class="nav main-lastinfo ps-enter-hidden-list">
+<div class="nav main-lastinfo">
   <span class="nav-item-alt" set:html={site.footerInfo} />
 </div>

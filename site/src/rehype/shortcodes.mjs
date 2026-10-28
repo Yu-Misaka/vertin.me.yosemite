@@ -1,10 +1,7 @@
-(function () {
-  'use strict';
-
-  const PLACEHOLDER_SRC =
-    'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+// Compatibility compiler for the existing Markdown shortcode syntax.
+// Runs during the build, so visitors receive the final HTML without a parser.
+export function compileShortcodes(source) {
   let tabsInstance = 0;
-
   function stripLeadingBreaks(value) {
     return value.replace(/^<br\s*\/?>/i, '');
   }
@@ -31,75 +28,6 @@
         .replace(/[‘’]/g, "'")
         .replace(/&quot;|&#34;|&#8220;|&#8221;/g, '"')
         .replace(/&apos;|&#39;|&#8216;|&#8217;/g, "'");
-    });
-  }
-
-  function splitTrailingPunctuation(url) {
-    let suffix = '';
-    while (/[)\].,!?:;，。！？；：、”’》】）]$/.test(url)) {
-      suffix = url.slice(-1) + suffix;
-      url = url.slice(0, -1);
-    }
-    return { url, suffix };
-  }
-
-  function linkifyTextNodes(root) {
-    if (!root || !root.querySelectorAll) return;
-
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        if (!node.nodeValue || !/https?:\/\//i.test(node.nodeValue)) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        const parent = node.parentElement;
-        if (!parent) return NodeFilter.FILTER_REJECT;
-        if (parent.closest('a, code, pre, kbd, samp, script, style, textarea')) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
-
-    const targets = [];
-    while (walker.nextNode()) {
-      targets.push(walker.currentNode);
-    }
-
-    targets.forEach(function (textNode) {
-      const text = textNode.nodeValue;
-      const regex = /https?:\/\/[^\s<]+/gi;
-      let lastIndex = 0;
-      let match;
-      const fragment = document.createDocumentFragment();
-
-      while ((match = regex.exec(text))) {
-        const matchText = match[0];
-        const start = match.index;
-        const split = splitTrailingPunctuation(matchText);
-
-        if (start > lastIndex) {
-          fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
-        }
-
-        const link = document.createElement('a');
-        link.href = split.url;
-        link.textContent = split.url;
-        fragment.appendChild(link);
-
-        if (split.suffix) {
-          fragment.appendChild(document.createTextNode(split.suffix));
-        }
-
-        lastIndex = start + matchText.length;
-      }
-
-      if (lastIndex < text.length) {
-        fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
-      }
-
-      if (fragment.childNodes.length) {
-        textNode.parentNode.replaceChild(fragment, textNode);
-      }
     });
   }
 
@@ -227,7 +155,7 @@
           );
         }
       );
-      return '<div id="timeline">' + events + '</div>';
+      return '<div class="timeline">' + events + '</div>';
     });
   }
 
@@ -249,9 +177,9 @@
         const tabId = baseId + '-' + (index + 1);
         const isActive = index === 0;
         links.push(
-          '<div class="tab-link' +
+          '<button type="button" class="tab-link' +
             (isActive ? ' active' : '') +
-            '" data-tab="' +
+            '" id="' + tabId + '-tab" aria-selected="' + isActive + '" data-tab="' +
             tabId +
             '" role="tab" aria-controls="' +
             tabId +
@@ -259,7 +187,7 @@
             (isActive ? '0' : '-1') +
             '">' +
             title +
-            '</div>'
+            '</button>'
         );
         panes.push(
           '<div class="tab-pane' +
@@ -267,7 +195,7 @@
             '" id="' +
             tabId +
             '" role="tabpanel" aria-labelledby="' +
-            tabId +
+            tabId + '-tab' +
             '">' +
             tabContent +
             '</div>'
@@ -297,7 +225,7 @@
       const url = '//player.bilibili.com/player.html?bvid=' + bvid + '&autoplay=0';
       return (
         '<div class="bilibili-card">' +
-        '<iframe src="' +
+        '<iframe loading="lazy" title="哔哩哔哩视频" src="' +
         url +
         '" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>' +
         '</div>'
@@ -315,142 +243,17 @@
     });
   }
 
-  function wrapFriendCards(root) {
-    let node = root.firstElementChild;
-    while (node) {
-      if (node.classList && node.classList.contains('friendsboard-item')) {
-        const list = document.createElement('div');
-        list.className = 'friendsboard-list';
-        node.parentNode.insertBefore(list, node);
-        while (node && node.classList && node.classList.contains('friendsboard-item')) {
-          const next = node.nextElementSibling;
-          list.appendChild(node);
-          node = next;
-        }
-        continue;
-      }
-      node = node.nextElementSibling;
-    }
-  }
 
-  function addFigcaptions(root) {
-    const images = root.querySelectorAll('img');
-    images.forEach(function (img) {
-      if (
-        img.classList.contains('friends-card-avatar') ||
-        img.classList.contains('no-figcaption')
-      ) {
-        return;
-      }
-      const alt = img.getAttribute('alt');
-      if (!alt) return;
-      const parentFigure = img.closest('figure');
-      if (parentFigure) {
-        if (!parentFigure.querySelector('figcaption')) {
-          const figcaption = document.createElement('figcaption');
-          figcaption.textContent = alt;
-          parentFigure.appendChild(figcaption);
-        }
-        return;
-      }
-      const figure = document.createElement('figure');
-      const figcaption = document.createElement('figcaption');
-      figcaption.textContent = alt;
-      const parent = img.parentNode;
-      parent.replaceChild(figure, img);
-      figure.appendChild(img);
-      figure.appendChild(figcaption);
-    });
-  }
-
-  function applyLazyLoad(root) {
-    const images = root.querySelectorAll('img');
-    images.forEach(function (img) {
-      if (img.classList.contains('friends-card-avatar')) return;
-      const isExcluded =
-        img.classList.contains('no-zoom') ||
-        img.id === 'no-zoom';
-
-      if (!isExcluded && !img.hasAttribute('data-zoomable')) {
-        img.setAttribute('data-zoomable', '');
-      }
-
-      if (img.hasAttribute('data-lazy-src')) return;
-      if (img.getAttribute('loading') === 'eager') return;
-      if (img.classList.contains('lazy-loaded')) return;
-
-      const src = img.getAttribute('src');
-      if (src) {
-        img.setAttribute('data-lazy-src', src);
-        img.setAttribute('src', PLACEHOLDER_SRC);
-      }
-      const srcset = img.getAttribute('srcset');
-      if (srcset) {
-        img.setAttribute('data-lazy-srcset', srcset);
-        img.removeAttribute('srcset');
-      }
-    });
-  }
-
-  function processShortcodes(root) {
-    let html = root.innerHTML;
-    html = normalizeShortcodeQuotes(html);
-    html = normalizeShortcodeLineBreaks(html);
-    html = parseAlerts(html);
-    html = parseWindows(html);
-    html = parseFriendCards(html);
-    html = parseCollapsible(html);
-    html = parseTimeline(html);
-    html = parseTabs(html);
-    html = parseBilibili(html);
-    html = parsePicGrid(html);
-
-    if (html !== root.innerHTML) {
-      root.innerHTML = html;
-    }
-
-    wrapFriendCards(root);
-    addFigcaptions(root);
-    applyLazyLoad(root);
-    linkifyTextNodes(root);
-  }
-
-  function processAll(scope) {
-    const roots = scope.querySelectorAll('.post-content');
-    roots.forEach(processShortcodes);
-  }
-
-  function initialize(scope) {
-    processAll(scope);
-
-    if (typeof runShortcodes === 'function') {
-      runShortcodes(scope);
-    }
-
-    if (window.LazyLoadManager && typeof window.LazyLoadManager.observe === 'function') {
-      window.LazyLoadManager.observe(scope);
-    }
-
-    if (typeof renderLatex === 'function') {
-      renderLatex();
-    }
-
-    if (typeof initializeStickyTOC === 'function') {
-      initializeStickyTOC();
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    initialize(document);
+  const protectedBlocks = [];
+  let html = source.replace(/<(pre|code|script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, block => {
+    const index = protectedBlocks.push(block) - 1;
+    return `<!--ps-protected-${index}-->`;
   });
-
-  document.addEventListener('astro:after-swap', function () {
-    initialize(document);
-  });
-
-  document.addEventListener('astro:page-load', function () {
-    initialize(document);
-  });
-
-  window.__psShortcodesInit = initialize;
-})();
+  html = normalizeShortcodeLineBreaks(normalizeShortcodeQuotes(html));
+  // Markdown wraps standalone delimiters in paragraphs. Remove those wrappers
+  // before inserting block elements, rather than relying on browser repairs.
+  html = html.replace(/<p>(\s*\[(?:\/?(?:tabs|tab|timeline|timeline-event|collapsible-panel|window|alert|PicGrid|friend-card)|bilibili-card)\b[^\]]*\])/gi, '$1');
+  html = html.replace(/(\[\/(?:tabs|tab|timeline|timeline-event|collapsible-panel|window|alert|PicGrid|friend-card)\]\s*)<\/p>/gi, '$1');
+  for (const parse of [parseAlerts, parseWindows, parseFriendCards, parseCollapsible, parseTimeline, parseTabs, parseBilibili, parsePicGrid]) html = parse(html);
+  return html.replace(/<!--ps-protected-(\d+)-->/g, (_, index) => protectedBlocks[Number(index)]);
+}

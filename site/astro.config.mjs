@@ -1,19 +1,22 @@
 import { defineConfig } from "astro/config";
-import vue from "@astrojs/vue";
 import remarkGfmNoAutolink from "./src/remark/remark-gfm-no-autolink.mjs";
 import rehypeWrapTables from "./src/rehype/rehype-wrap-tables.mjs";
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import rehypeContent from './src/rehype/rehype-content.mjs';
+import siteFonts from './src/integrations/fonts.mjs';
 
 export default defineConfig({
-  integrations: [vue()],
+  vite: { plugins: [siteFonts()] },
   output: "static",
   prefetch: {
     prefetchAll: true,
-    defaultStrategy: 'viewport'
+    defaultStrategy: 'hover'
   },
   markdown: {
     gfm: false,
-    remarkPlugins: [remarkGfmNoAutolink],
-    rehypePlugins: [rehypeWrapTables],
+    remarkPlugins: [remarkGfmNoAutolink, remarkMath],
+    rehypePlugins: [rehypeContent, [rehypeKatex, { strict: 'ignore', throwOnError: false }], rehypeWrapTables],
     shikiConfig: {
       themes: {
         light: "github-light",

@@ -1,0 +1,39 @@
+/* Navigation has one owner: Astro's native snapshots. The live document stays
+   fully laid out throughout preparation, cancellation and history traversal. */
+:root {
+  /* Keep the persisted header outside the captured/hit-test-suppressed tree. */
+  view-transition-name: none;
+  --page-motion-duration: 220ms;
+  --page-motion-easing: cubic-bezier(.2,.8,.2,1);
+  scrollbar-gutter: stable;
+}
+
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+/* The header stays interactive so a second navigation can interrupt the first. */
+::view-transition { pointer-events: none; }
+::view-transition-group(content) { animation-duration: var(--page-motion-duration); }
+::view-transition-old(content) {
+  animation: content-out 120ms ease both;
+}
+::view-transition-new(content) {
+  animation: content-in var(--page-motion-duration) var(--page-motion-easing) both;
+}
+::view-transition-group(post-cover) {
+  animation-duration: 280ms;
+  animation-timing-function: var(--page-motion-easing);
+}
+::view-transition-old(post-cover), ::view-transition-new(post-cover) {
+  height: 100%;
+  object-fit: cover;
+  border-radius: .85rem .85rem 0 0;
+}
+@keyframes content-out { to { opacity: 0; } }
+@keyframes content-in { from { opacity: 0; transform: translateY(8px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  html .medium-zoom-image, html .medium-zoom-overlay { transition: none !important; }
+}
+

@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import Cover from "../components/Cover.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../config/site";
 
@@ -52,16 +53,14 @@ const formatChars = (value: number) => {
         <header class={`post-item post-header ${hasImg ? "no-bg" : ""}`}>
           <div class="wrapper post-wrapper">
             <div class="avatar post-author">
-              <img src={site.author.avatar} alt="作者头像" class="avatar-item avatar-img" loading="lazy" decoding="async" />
+              <img src={site.author.avatar} alt="作者头像" class="avatar-item avatar-img" width="32" height="32" loading="lazy" decoding="async" />
               <span class="avatar-item">{site.author.name}</span>
             </div>
           </div>
         </header>
 
         {hasImg ? (
-          <figure class="post-media">
-            <img itemprop="image" src={cover} alt="头图" loading="eager" decoding="async" />
-          </figure>
+          <Cover src={cover!} eager />
         ) : null}
 
         <section class="post-item post-body">
@@ -94,7 +93,7 @@ const formatChars = (value: number) => {
               {years.map((year) => (
                 <>
 	                  <h3 class="timeline-year">{year}</h3>
-	                  <div id="timeline">
+	                  <div class="timeline">
 	                    {(archiveMap.get(year) ?? []).map((item) => (
 	                      <div class="timeline-item">
 	                        <div class="timeline-dot"></div>

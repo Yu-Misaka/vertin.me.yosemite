@@ -1,20 +1,18 @@
-(function () {
-  'use strict';
+import { updateCommentCounts } from './integrations.js';
 
   var PAGEFIND_JS = '/pagefind/pagefind.js';
-  var PLACEHOLDER_GIF =
-    'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
   var pagefindLoading = null;
+  var pagefindInstance = null;
   var searchToken = 0;
 
   function loadPagefind() {
-    if (window.__pagefind) return Promise.resolve(window.__pagefind);
+    if (pagefindInstance) return Promise.resolve(pagefindInstance);
     if (pagefindLoading) return pagefindLoading;
 
     pagefindLoading = import(PAGEFIND_JS)
       .then(function (mod) {
         var pagefind = mod && (mod.pagefind || mod.default || mod);
-        window.__pagefind = pagefind;
+        pagefindInstance = pagefind;
         return pagefind;
       })
       .catch(function () {
@@ -84,7 +82,7 @@
     } else {
       url.searchParams.delete('q');
     }
-    window.history.replaceState({}, '', url.toString());
+    window.history.replaceState(window.history.state, '', url.toString());
   }
 
   function getQueryParam() {
@@ -117,10 +115,9 @@
     article.className =
       'post ' +
       (hasImg ? 'post--photo post--cover' : 'post--text') +
-      ' post--index main-item ps-enter-hidden-list';
+      ' post--index main-item';
     article.setAttribute('data-ps-post-key', getSlugFromPath(pathname));
     article.setAttribute('data-protected', 'false');
-    article.setAttribute('data-swup-animation', '');
 
     var inner = createElement('div', 'post-inner');
 
@@ -135,6 +132,8 @@
     var avatar = createElement('div', 'avatar post-author');
     var avatarImg = document.createElement('img');
     avatarImg.src = context.authorAvatar;
+    avatarImg.width = 32;
+    avatarImg.height = 32;
     avatarImg.alt = '作者头像';
     avatarImg.className = 'avatar-item avatar-img';
     avatarImg.loading = 'lazy';
@@ -152,8 +151,8 @@
       var figure = createElement('figure', 'post-media');
       var img = document.createElement('img');
       img.setAttribute('itemprop', 'image');
-      img.src = PLACEHOLDER_GIF;
-      img.setAttribute('data-lazy-src', image);
+      img.src = image;
+      img.loading = 'lazy';
       img.alt = '头图';
       img.decoding = 'async';
       img.fetchPriority = 'auto';
@@ -213,13 +212,11 @@
     });
     resultsEl.appendChild(fragment);
 
-    if (window.LazyLoadManager && typeof window.LazyLoadManager.observe === 'function') {
-      window.LazyLoadManager.observe(resultsEl);
-    }
   }
 
-  function debounce(fn, wait) {
+  function debounce(fn, wait, signal) {
     var timer;
+    signal.addEventListener('abort', () => window.clearTimeout(timer), { once: true });
     return function () {
       var args = arguments;
       window.clearTimeout(timer);
@@ -229,8 +226,9 @@
     };
   }
 
-  function initSearchPage() {
-    var searchPage = document.getElementById('search-page');
+  export function initSearchPage(root, signal) {
+    var searchPage = root.querySelector('#search-page');
+    signal.addEventListener('abort', () => { searchToken++; }, { once: true });
     if (!searchPage || searchPage.dataset.searchReady === '1') return;
     searchPage.dataset.searchReady = '1';
 
@@ -248,65 +246,47 @@
       showCategory: searchPage.dataset.showCategory === '1'
     };
 
-    var runSearch = function (query) {
+    var runSearch = async function (query) {
       var token = ++searchToken;
       var trimmed = query.trim();
       updateTitle(titleEl, trimmed);
       setQueryParam(trimmed);
-
+      const stale = () => signal.aborted || token !== searchToken;
       if (!trimmed) {
-        resultsEl.innerHTML = '';
+        resultsEl.replaceChildren();
         updateMessage(messageEl, trimmed, 0, false);
         return;
       }
-
       updateMessage(messageEl, trimmed, 0, true);
-
-      loadPagefind().then(function (pagefind) {
-        if (!pagefind || typeof pagefind.search !== 'function') {
-          if (token !== searchToken) return;
-          resultsEl.innerHTML = '';
-          updateMessage(messageEl, trimmed, 0, false, '搜索索引尚未生成，请先运行 build');
-          return;
-        }
-
-        pagefind.search(trimmed).then(function (searchResult) {
-          if (token !== searchToken) return;
-          if (!searchResult || !searchResult.results) {
-            resultsEl.innerHTML = '';
-            updateMessage(messageEl, trimmed, 0, false, '搜索索引不可用');
-            return;
-          }
-
-          Promise.all(searchResult.results.map(function (result) { return result.data(); }))
-            .then(function (items) {
-              if (token !== searchToken) return;
-              var filtered = items.filter(function (item) {
-                var path = getPathname(item.url || '');
-                return path.startsWith('/posts/');
-              });
-              renderResults(resultsEl, filtered, context);
-              updateMessage(messageEl, trimmed, filtered.length, false);
-            })
-            .catch(function () {
-              if (token !== searchToken) return;
-              resultsEl.innerHTML = '';
-              updateMessage(messageEl, trimmed, 0, false, '搜索失败，请稍后再试');
-            });
-        });
-      });
+      try {
+        const pagefind = await loadPagefind();
+        if (stale()) return;
+        if (!pagefind?.search) throw new Error('搜索索引尚未生成，请先运行 build');
+        const result = await pagefind.search(trimmed);
+        if (stale()) return;
+        const items = await Promise.all((result.results || []).map(item => item.data()));
+        if (stale()) return;
+        const posts = items.filter(item => getPathname(item.url || '').startsWith('/posts/'));
+        renderResults(resultsEl, posts, context);
+        updateCommentCounts(resultsEl, signal);
+        updateMessage(messageEl, trimmed, posts.length, false);
+      } catch (error) {
+        if (stale()) return;
+        resultsEl.replaceChildren();
+        updateMessage(messageEl, trimmed, 0, false, error.message || '搜索失败，请稍后再试');
+      }
     };
 
-    var debouncedSearch = debounce(runSearch, 200);
+    var debouncedSearch = debounce(runSearch, 200, signal);
 
     form.addEventListener('submit', function (event) {
       event.preventDefault();
       runSearch(input.value || '');
-    });
+    }, { signal });
 
     input.addEventListener('input', function () {
       debouncedSearch(input.value || '');
-    });
+    }, { signal });
 
     var initialQuery = getQueryParam();
     if (initialQuery) {
@@ -317,7 +297,3 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', initSearchPage);
-  document.addEventListener('astro:after-swap', initSearchPage);
-  document.addEventListener('astro:page-load', initSearchPage);
-})();
