@@ -1,6 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { createMarkdownProcessor } from '@astrojs/markdown-remark';
 import { fromHtml } from 'hast-util-from-html';
 import { visit } from 'unist-util-visit';
@@ -18,7 +17,6 @@ const processor = await createMarkdownProcessor({
   rehypePlugins: [rehypeContent, [rehypeKatex, { strict: 'ignore' }], rehypeTables],
 });
 const render = async source => (await processor.render(source)).code;
-const source = async path => (await readFile(new URL(`../src/content/${path}`, import.meta.url), 'utf8')).replace(/^---\n[\s\S]*?\n---\n/, '');
 function elements(html, predicate) {
   const nodes = [];
   visit(fromHtml(html, { fragment: true }), 'element', node => { if (predicate(node)) nodes.push(node); });
@@ -26,25 +24,64 @@ function elements(html, predicate) {
 }
 const hasClass = name => node => node.properties.className?.includes(name);
 
-test('legacy CV tabs retain their timelines and accessible panel relationships', async () => {
-  const html = await render(await source('pages/curriculum-vitae.md'));
+test('legacy tabs retain their timelines and accessible panel relationships', async () => {
+  const html = await render(`
+[tabs]
+[tab title="First timeline"]
+[timeline]
+[timeline-event date="2024" title="**First event**"]
+
+First event description.
+
+[/timeline-event]
+[/timeline]
+[/tab]
+[tab title="Second timeline"]
+[timeline]
+[timeline-event date="2025" title="**Second event**"]
+
+[Event details](https://example.org/event)
+
+[/timeline-event]
+[/timeline]
+[/tab]
+[tab title="Notes"]
+
+Plain tab content.
+
+[/tab]
+[/tabs]
+`);
   const tabs = elements(html, node => node.properties.role === 'tab');
   const panels = elements(html, node => node.properties.role === 'tabpanel');
   assert.equal(tabs.length, 3);
   assert.equal(panels.length, 3);
-  panels.forEach((panel, index) => assert.equal(panel.properties.ariaLabelledBy[0], tabs[index].properties.id));
-  assert.equal(elements(html, hasClass('timeline-item')).length, 4);
-  assert.match(html, /University of Wisconsin/);
-  assert.match(html, /KoszulComplex/);
+  panels.forEach((panel, index) => {
+    assert.equal(panel.properties.ariaLabelledBy[0], tabs[index].properties.id);
+    assert.equal(tabs[index].properties.ariaControls[0], panel.properties.id);
+  });
+  assert.equal(elements(html, hasClass('timeline-item')).length, 2);
+  assert.match(html, /<strong>First event<\/strong>/);
+  assert.match(html, /First event description/);
+  assert.match(html, /<strong>Second event<\/strong>/);
+  assert.equal(elements(html, node => node.tagName === 'a')[0].properties.href, 'https://example.org/event');
+  assert.match(html, /Plain tab content/);
   assert.doesNotMatch(html, /\[\/?(?:tabs|tab|timeline|timeline-event)\b/);
 });
 
 test('adjacent friend cards compile into grids without dropping links', async () => {
-  const markdown = await source('pages/navigator.md');
-  const html = await render(markdown);
-  assert.equal(elements(html, hasClass('friendsboard-item')).length, markdown.match(/\[friend-card /g).length);
-  assert.ok(elements(html, hasClass('friendsboard-list')).length >= 4);
-  assert.match(html, /foo_input_vgmstream/);
+  const html = await render(`
+## First group
+[friend-card name="First friend" ico="/images/avatar.webp" url="https://example.org/first"]First description.[/friend-card]
+[friend-card name="Second friend" ico="/images/avatar.webp" url="https://example.org/second"]See the [guide](https://example.org/guide).[/friend-card]
+
+## Second group
+[friend-card name="Third friend" ico="/images/avatar.webp" url="https://example.org/third"]Third description.[/friend-card]
+`);
+  assert.equal(elements(html, hasClass('friendsboard-item')).length, 3);
+  assert.equal(elements(html, hasClass('friendsboard-list')).length, 2);
+  const links = elements(html, node => node.tagName === 'a').map(node => node.properties.href);
+  for (const path of ['first', 'second', 'third', 'guide']) assert.ok(links.includes(`https://example.org/${path}`));
   assert.doesNotMatch(html, /\[friend-card /);
 });
 
