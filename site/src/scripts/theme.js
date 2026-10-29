@@ -1,10 +1,12 @@
 import { motionDuration, motionEasing, prefersReducedMotion } from './animations.js';
 
 const media = matchMedia('(prefers-color-scheme: dark)');
+const themeLabels = { auto: '跟随系统', light: '浅色模式', dark: '深色模式' };
 
 function savedTheme() {
   try {
-    return document.cookie.match(/(?:^|;)\s*theme=([^;]+)/)?.[1] || localStorage.getItem('theme') || 'auto';
+    const saved = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/)?.[1] || localStorage.getItem('theme') || 'auto';
+    return Object.hasOwn(themeLabels, saved) ? saved : 'auto';
   } catch {
     return 'auto';
   }
@@ -16,11 +18,16 @@ export function syncTheme() {
   document.documentElement.dataset.theme = effective;
   const icon = document.getElementById('theme-icon');
   if (icon) icon.className = saved === 'auto' ? 'icon-auto' : saved === 'dark' ? 'icon-moon-inv' : 'icon-sun-inv';
+  const button = document.querySelector('.theme-toggle');
+  const label = `切换主题，当前：${themeLabels[saved]}`;
+  button?.setAttribute('aria-label', label);
+  button?.setAttribute('title', label);
 }
 
 export function setupTheme(signal) {
   let cancelIcon = () => {};
   let timer;
+  let statusTimer;
   const prepareChange = () => {
     document.dispatchEvent(new Event('site:theme-change'));
     clearTimeout(timer);
@@ -43,6 +50,15 @@ export function setupTheme(signal) {
     prepareChange();
     cancelIcon();
     syncTheme();
+    // The live region belongs to the persisted header, so rapid toggles and
+    // page navigation update one notification instead of creating a queue.
+    const status = document.getElementById('theme-status');
+    if (status) {
+      clearTimeout(statusTimer);
+      status.textContent = next === 'auto' ? '主题已设为跟随系统' : `已切换至${themeLabels[next]}`;
+      status.dataset.visible = '';
+      statusTimer = setTimeout(() => delete status.dataset.visible, 2600);
+    }
     const icon = document.getElementById('theme-icon');
     if (icon && !prefersReducedMotion()) {
       const effect = icon.animate([
@@ -53,5 +69,12 @@ export function setupTheme(signal) {
       effect.finished.then(cancelIcon, () => {});
     }
   }, { signal });
-  signal.addEventListener('abort', () => { clearTimeout(timer); cancelIcon(); }, { once: true });
+  signal.addEventListener('abort', () => {
+    clearTimeout(timer);
+    clearTimeout(statusTimer);
+    cancelIcon();
+    delete document.documentElement.dataset.themeChanging;
+    const status = document.getElementById('theme-status');
+    if (status) { delete status.dataset.visible; status.textContent = ''; }
+  }, { once: true });
 }

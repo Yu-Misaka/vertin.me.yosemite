@@ -1,3 +1,30 @@
+.theme-status {
+    position: fixed;
+    z-index: 1000;
+    left: 50%;
+    bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 12px 18px;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    background: var(--card2-color);
+    color: var(--text-color);
+    box-shadow: 0 2px 8px #00000010;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 8px);
+    transition: opacity var(--motion-local) var(--motion-ease), transform var(--motion-local) var(--motion-ease);
+}
+
+.theme-status[data-visible] {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
 #mox-toast {
     visibility: hidden;
     min-width: 250px;

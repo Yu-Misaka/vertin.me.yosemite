@@ -62,10 +62,11 @@ const aplayerConfig = JSON.stringify({
       ))}
     </nav>
     <div class="theme-toggle-container">
-      <button class="theme-toggle" aria-label="日夜切换">
-        <span id="theme-icon" class="icon-moon-inv"></span>
+      <button type="button" class="theme-toggle" aria-label="切换主题，当前：跟随系统">
+        <span id="theme-icon" class="icon-auto" aria-hidden="true"></span>
       </button>
     </div>
+    <div id="theme-status" class="theme-status" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="nav header-item left-side-custom-code header-spacer">&emsp;</div>
     {aplayer.enabled ? (
       <div class="aplayer-shell" id="aplayer" data-aplayer-config={aplayerConfig}>

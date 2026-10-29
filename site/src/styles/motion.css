@@ -16,7 +16,8 @@
 html[data-theme-changing] { --motion-color: var(--motion-theme); }
 html[data-motion] { scroll-behavior: auto; }
 .header-title, .header-about, .post-title, .post-content, .post-meta,
-.section-header, .toc-a, .tab-content, .collapsible-panel, .license-info-card {
+.section-header, .toc-a, .tab-content, .collapsible-panel, .license-info-card,
+.not-found-code, .not-found-title, .not-found-description, .not-found-illustration {
   transition: color var(--motion-color) var(--motion-ease),
     background-color var(--motion-color) var(--motion-ease),
     border-color var(--motion-color) var(--motion-ease);

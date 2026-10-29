@@ -23,11 +23,18 @@ for (const file of files) {
   const tree = fromHtml(html);
   const ids = new Set();
   const assets = [];
+  const tocTargets = [];
+  const headingIds = new Set();
   visit(tree, 'element', node => {
     const props = node.properties;
     if (props.id) {
       assert.ok(!ids.has(props.id), `${file}: duplicate id ${props.id}`);
       ids.add(props.id);
+      if (/^h[1-6]$/.test(node.tagName)) headingIds.add(props.id);
+    }
+    if (props.className?.includes('toc-a')) {
+      assert.ok(String(props.href).startsWith('#'), `${file}: TOC must link to this page`);
+      tocTargets.push(decodeURIComponent(props.href.slice(1)));
     }
     if (props.className?.includes('katex')) formulas++;
     assert.ok(!props.className?.includes('katex-error'), `${file}: invalid formula`);
@@ -46,6 +53,9 @@ for (const file of files) {
       }
     }
   });
+  for (const target of tocTargets) {
+    assert.ok(headingIds.has(target), `${file}: TOC target must be a heading: ${target}`);
+  }
   for (const src of assets) await access(new URL('.' + src, dist));
 }
 await access(new URL('pagefind/pagefind.js', dist));

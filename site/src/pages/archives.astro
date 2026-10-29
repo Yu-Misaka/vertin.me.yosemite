@@ -3,6 +3,7 @@ import { getCollection } from "astro:content";
 import Cover from "../components/Cover.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { site } from "../config/site";
+import { buildTocHtml } from "../utils/toc";
 
 const posts = await getCollection("posts", ({ data }) => !data.draft);
 const cover = site.archivesCover;
@@ -39,6 +40,11 @@ const totalPosts = posts.length;
 	  });
 
 const years = Array.from(archiveMap.keys()).sort((a, b) => Number(b) - Number(a));
+const tocHtml = buildTocHtml([
+  { depth: 2, slug: 'archive-tags', text: '标签' },
+  { depth: 2, slug: 'archive-timeline', text: '时间线' },
+  ...years.map(year => ({ depth: 3, slug: `archive-year-${year}`, text: `${year} 年` })),
+]);
 
 const formatChars = (value: number) => {
   if (value >= 10000) return `${(value / 10000).toFixed(2)} w`;
@@ -46,7 +52,7 @@ const formatChars = (value: number) => {
   return `${value}`;
 };
 ---
-<BaseLayout pageType="page" navCurrent="/archives" title="归墟">
+<BaseLayout pageType="page" navCurrent="/archives" title="归墟" tocHtml={tocHtml}>
   <div class="wrapper">
     <article class={`post ${hasImg ? "post--photo post--cover" : "post--text"} post--index main-item`}>
       <div class="post-inner">
@@ -74,7 +80,7 @@ const formatChars = (value: number) => {
                 共创作了 {totalPosts} 篇文章，合 {formatChars(totalChars)} 字
               </div>
 
-              <h2> 标签 </h2>
+              <h2 id="archive-tags">标签</h2>
               <section class="section-body">
                 <div class="cloud-container">
                   {tags.length ? (
@@ -89,10 +95,10 @@ const formatChars = (value: number) => {
                 </div>
               </section>
 
-              <h2>时间线</h2>
+              <h2 id="archive-timeline">时间线</h2>
               {years.map((year) => (
                 <>
-	                  <h3 class="timeline-year">{year}</h3>
+	                  <h3 class="timeline-year" id={`archive-year-${year}`}>{year}</h3>
 	                  <div class="timeline">
 	                    {(archiveMap.get(year) ?? []).map((item) => (
 	                      <div class="timeline-item">
