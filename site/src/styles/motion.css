@@ -7,6 +7,8 @@
   --motion-page: 220ms;
   --motion-enter: 280ms;
   --motion-cover: 300ms;
+  --motion-cover-hover: 450ms;
+  --motion-cover-ease: cubic-bezier(.4,0,.2,1);
   --motion-ease: cubic-bezier(.2,.8,.2,1);
   --motion-exit: cubic-bezier(.4,0,1,1);
   --motion-color: var(--motion-feedback);
@@ -82,11 +84,17 @@ html[data-motion] { scroll-behavior: auto; }
 .tab-indicator:not([data-positioned]),
 .siderbar[data-jump] { transition: none; }
 .post-media { overflow: hidden; }
-.post--index:not(.post--single) .post-media img {
-  transition: transform var(--motion-page) var(--motion-ease), filter var(--motion-color) ease;
+.post-media img {
+  transition: transform var(--motion-cover-hover) var(--motion-cover-ease), filter var(--motion-color) ease;
 }
 @media (hover: hover) and (pointer: fine) {
-  .post--index:not(.post--single):hover .post-media img { transform: scale(1.015); }
+  .post--index:not(.post--single):hover .post-media:not([data-shared-cover]) img { transform: scale(1.015); }
+}
+/* Keep the clicked crop in both snapshots. Once the shared transition ends,
+   the live image eases back to its destination's resting/hovered state. */
+.post-media[data-shared-cover] img {
+  transform: var(--motion-cover-transform, none);
+  transition: none;
 }
 @media (hover: none) {
   .alert-box:hover { transform: none; }

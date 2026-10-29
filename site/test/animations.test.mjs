@@ -95,19 +95,33 @@ test('superseded navigation cannot clear the newer transition; theme changes can
   app.abort();
 });
 
-test('cover reuse is paired, viewport-gated after scroll restoration, and removed on finish', async () => {
+test('cover reuse preserves the current hover frame and releases it on finish or cancellation', async t => {
   globalThis.innerHeight = 800;
   globalThis.innerWidth = 1200;
   globalThis.matchMedia = () => ({ matches: false });
-  for (const { hash, offscreen, loaded, expected } of [
+  const previousGetComputedStyle = globalThis.getComputedStyle;
+  const transform = 'matrix(1.0075, 0, 0, 1.0075, 0, 0)';
+  globalThis.getComputedStyle = () => ({ transform });
+  t.after(() => {
+    if (previousGetComputedStyle) globalThis.getComputedStyle = previousGetComputedStyle;
+    else delete globalThis.getComputedStyle;
+  });
+  for (const { hash, offscreen, loaded, expected, cancel } of [
     { hash: '', offscreen: false, loaded: true, expected: 'shared' },
+    { hash: '', offscreen: false, loaded: true, expected: 'shared', cancel: 'navigation' },
+    { hash: '', offscreen: false, loaded: true, expected: 'shared', cancel: 'theme' },
     { hash: '', offscreen: true, loaded: true, expected: 'fade' },
     { hash: '#comments', offscreen: false, loaded: true, expected: 'fade' },
     { hash: '', offscreen: false, loaded: false, expected: 'fade' },
   ]) {
     const image = { complete: loaded, naturalWidth: loaded ? 1600 : 0, getAttribute: () => '/cover.webp' };
     const makeCover = () => ({
-      style: {}, dataset: {}, attributes: new Map(), top: 0,
+      style: {
+        properties: new Map(),
+        setProperty(name, value) { this.properties.set(name, value); },
+        removeProperty(name) { this.properties.delete(name); },
+        getPropertyValue(name) { return this.properties.get(name) || ''; },
+      }, dataset: {}, attributes: new Map(), top: 0,
       getBoundingClientRect() { return { top: this.top, bottom: this.top + 350, height: 350, width: 600, left: 0, right: 600 }; },
       querySelector: () => image,
       setAttribute(name, value) { this.attributes.set(name, value); },
@@ -138,6 +152,8 @@ test('cover reuse is paired, viewport-gated after scroll restoration, and remove
       from: new URL('https://site.example/'), to: new URL(`https://site.example/posts/9/${hash}`),
       sourceElement: { closest: () => source }, signal: nav.signal,
     });
+    assert.equal(source.cover.style.getPropertyValue('--motion-cover-transform'),
+      !hash && loaded ? transform : '', 'freeze the actual intermediate scale, not the full hover target');
     let finish;
     dispatch('astro:before-swap', {
       newDocument: destination,
@@ -146,6 +162,7 @@ test('cover reuse is paired, viewport-gated after scroll restoration, and remove
     const persisted = target.cover.attributes.get('data-astro-transition-persist');
     if (persisted) {
       assert.equal(persisted, source.cover.attributes.get('data-astro-transition-persist'));
+      assert.equal(target.cover.style.getPropertyValue('--motion-cover-transform'), transform);
       target.cover = source.cover; // Astro transfers the already decoded figure.
     }
     target.cover.top = offscreen ? 900 : 0;
@@ -153,10 +170,14 @@ test('cover reuse is paired, viewport-gated after scroll restoration, and remove
     dispatch('astro:after-swap');
     assert.equal(doc.documentElement.dataset.motionCover, expected);
     assert.equal('sharedCover' in target.cover.dataset, expected === 'shared');
+    assert.equal(target.cover.style.getPropertyValue('--motion-cover-transform'), expected === 'shared' ? transform : '');
+    if (cancel === 'navigation') nav.abort();
+    if (cancel === 'theme') dispatch('site:theme-change');
     finish();
     await Promise.resolve();
     assert.equal(doc.documentElement.dataset.motionCover, undefined);
     assert.equal(target.cover.attributes.has('data-astro-transition-persist'), false);
+    assert.equal(target.cover.style.getPropertyValue('--motion-cover-transform'), '');
     app.abort();
   }
 });

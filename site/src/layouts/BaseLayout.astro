@@ -27,7 +27,7 @@ const pageTitle = title ? `${title} - ${site.title}` : site.title;
 const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId : "";
 ---
 <!DOCTYPE html>
-<html lang="zh-CN" data-twikoo-env={twikooEnvId || undefined}>
+<html lang="zh-CN" data-twikoo-env={twikooEnvId || undefined} data-post-title-after={site.postTitleAfter}>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -68,19 +68,6 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
       .medium-zoom-image--hidden{visibility:hidden}
       .medium-zoom-image--opened{position:relative;cursor:pointer;cursor:zoom-out;will-change:transform}
     </style>
-
-    {site.postTitleAfter !== "off" ? (
-      <style
-        is:inline
-        set:html={`.post-title::after{content:"";bottom:${site.postTitleAfter === "wavyLine" ? "-5px" : "5px"};left:0;${
-          site.postTitleAfter === "boldLine"
-            ? "width:58px;height:11px;"
-            : site.postTitleAfter === "wavyLine"
-              ? "width:106px;height:12px;mask:url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"10\" viewBox=\"0 0 40 10\" preserveAspectRatio=\"none\"><path d=\"M0 5 Q 10 0, 20 5 T 40 5\" stroke=\"black\" stroke-width=\"2\" fill=\"transparent\"/></svg>') repeat-x;mask-size:40px 12px;"
-              : ""
-        }}`}
-      />
-    ) : null}
 
     <ClientRouter fallback="swap" />
     <script>

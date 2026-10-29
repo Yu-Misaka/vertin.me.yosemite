@@ -2054,27 +2054,45 @@ textarea:focus-within+.CtBoxBar {
 	position: absolute;
 	left: 0;
 	bottom: 6px;
-	width: 96px;
+	width: clamp(72px, 45%, 120px);
 	height: 9px;
-	border-radius: 0.4rem;
+	border-radius: 0.4rem 0 0 0.4rem;
 	background: linear-gradient(to right,
-			var(--themecolor),
-			color-mix(in srgb, var(--themecolor) 55%, transparent),
-			transparent);
+			var(--themecolor) 0%,
+			color-mix(in srgb, var(--themecolor) 80%, transparent) 30%,
+			color-mix(in srgb, var(--themecolor) 35%, transparent) 60%,
+			color-mix(in srgb, var(--themecolor) 8%, transparent) 82%,
+			transparent 94%, transparent 100%);
 	opacity: 0.45;
 	pointer-events: none;
-	transition: opacity var(--motion-feedback) var(--motion-ease), width var(--motion-feedback) var(--motion-ease);
+	transition: opacity var(--motion-page) var(--motion-ease), width var(--motion-page) var(--motion-ease);
 }
 
-.post-title:hover::after {
+/* PureSuck title decoration. Keep configuration in the stylesheet so the
+   bundled CSS cannot override an earlier inline style and hide the stripe. */
+[data-post-title-after='boldLine'] .post-title::after {
+	content: '';
+	bottom: 5px;
+	height: 11px;
+}
+
+[data-post-title-after='wavyLine'] .post-title::after {
+	content: '';
+	bottom: -5px;
+	height: 12px;
+	mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="10" viewBox="0 0 40 10" preserveAspectRatio="none"><path d="M0 5 Q 10 0, 20 5 T 40 5" stroke="black" stroke-width="2" fill="transparent"/></svg>') repeat-x;
+	mask-size: 40px 12px;
+}
+
+.post-title:has(a:focus-visible)::after {
 	opacity: 0.6;
-	width: 110px;
+	width: clamp(96px, 65%, 160px);
 }
 
-@media (hover: none) {
+@media (hover: hover) and (pointer: fine) {
 	.post-title:hover::after {
-		opacity: 0.45;
-		width: 96px;
+		opacity: 0.6;
+		width: clamp(96px, 65%, 160px);
 	}
 }
 

@@ -62,6 +62,7 @@ export function setupTransitions(signal) {
   let outgoing = [];
   const clearCovers = (root = document) => root.querySelectorAll('[data-shared-cover]').forEach(cover => {
     cover.style.viewTransitionName = '';
+    cover.style.removeProperty('--motion-cover-transform');
     cover.removeAttribute('data-astro-transition-persist');
     delete cover.dataset.sharedCover;
   });
@@ -75,8 +76,12 @@ export function setupTransitions(signal) {
     }
     outgoing = [];
   };
-  const mark = cover => {
+  const mark = (cover, transform) => {
     cover.style.viewTransitionName = 'post-cover';
+    // Capture the current frame, including a hover that is still in progress.
+    // The figure persists into the article, where the list's :hover rule stops
+    // matching; hold this crop until the snapshots hand back to the live image.
+    cover.style.setProperty('--motion-cover-transform', transform);
     // Reuse the already decoded image during Astro's swap. A fresh image parsed
     // in its inert destination document is not complete in the after-swap hook.
     cover.setAttribute('data-astro-transition-persist', 'shared-post-cover');
@@ -103,8 +108,9 @@ export function setupTransitions(signal) {
       const img = cover?.querySelector('img');
       if (source && (fromPost || source.dataset.psPostKey === key)
         && isVisible(cover) && img?.complete && img.naturalWidth) {
-        shared = { key: source.dataset.psPostKey, fromPost, src: img.getAttribute('src') };
-        mark(cover);
+        const transform = typeof getComputedStyle === 'function' ? getComputedStyle(img).transform : 'none';
+        shared = { key: source.dataset.psPostKey, fromPost, src: img.getAttribute('src'), transform };
+        mark(cover, transform);
       }
     }
     event.signal.addEventListener('abort', () => {
@@ -136,7 +142,7 @@ export function setupTransitions(signal) {
         .find(card => card.dataset.psPostKey === shared.key
           && card.classList.contains('post--single') !== shared.fromPost);
       const cover = target?.querySelector('.post-media');
-      if (cover?.querySelector('img')?.getAttribute('src') === shared.src) mark(cover);
+      if (cover?.querySelector('img')?.getAttribute('src') === shared.src) mark(cover, shared.transform);
       else { clearCovers(); shared = null; }
     }
   }, { signal });
