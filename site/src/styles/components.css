@@ -25,16 +25,9 @@
     /* Bold：标题 / 关键字（降一点闷感） */
     --blue-bold-color: #365acb;
     --green-bold-color: #2f7d4f;
-    --yellow-bold-color: #b7791f;
+    --yellow-bold-color: #94621a;
     --red-bold-color: #b84a4a;
     --pink-bold-color: #b94a73;
-
-    /* 饱和度高一点的 */
-    --blue-alert-color: #6482db;
-    --green-alert-color: #4ead86;
-    --yellow-alert-color: #e5b96e;
-    --red-alert-color: #cd575f;
-    --pink-alert-color: #ea868f;
 
 }
 
@@ -66,12 +59,6 @@
     --yellow-bold-color: #e0c98a;
     --red-bold-color: #e0a8a8;
     --pink-bold-color: #e0a8c0;
-
-    --blue-alert-color: #44579a;
-    --green-alert-color: #397e63;
-    --yellow-alert-color: #ab8748;
-    --red-alert-color: #9a444b;
-    --pink-alert-color: #bf677a;
 }
 
 /** 回到顶部 **/
@@ -83,7 +70,7 @@
     width: 50px;
     height: 50px;
     background-color: var(--themecolor);
-    color: var(--pure-color);
+    color: var(--on-accent-color);
     opacity: 0;
     visibility: hidden;
     /* 隐藏 */
@@ -114,7 +101,7 @@
 }
 
 .go-top a {
-    color: var(--pure-color);
+    color: var(--on-accent-color);
     text-decoration: none;
     display: flex;
     align-items: center;
@@ -138,7 +125,7 @@
 }
 
 .header-spacer {
-    color: #1d1f20;
+    color: var(--background-color);
 }
 
 .aplayer-shell {
@@ -155,22 +142,19 @@
 
 .alert-box {
     border-radius: 0.7rem;
-    box-shadow: 1px 1px 3px 0 rgba(0, 0, 0, .05);
     overflow: hidden;
     cursor: pointer;
     margin: 20px 0 !important;
     display: flex;
     padding: 10px 20px;
-    transition: transform var(--motion-feedback) var(--motion-ease), box-shadow var(--motion-feedback) var(--motion-ease);
+    transition: transform var(--motion-feedback) var(--motion-ease), border-color var(--motion-color) var(--motion-ease);
     transform: scale(1);
-    color: var(--pure-color);
     font-weight: bold;
     font-size: 0.95rem;
 }
 
 .alert-box:hover {
     transform: translateY(-2px);
-    box-shadow: 0 1px 6px 1px rgba(0, 0, 0, .06);
 }
 
 .alert-icon {
@@ -179,29 +163,35 @@
     line-height: 1;
 }
 
+/* 淡底 + 细描边，与 window 共用同一组色板，不再是实色色块 */
 .alert-box.green {
-    background-color: var(--green-alert-color);
-    border: 1px solid var(--green-alert-color);
+    color: var(--green-bold-color);
+    background-color: var(--green-pale-color);
+    border: 1px solid var(--green-border-color);
 }
 
 .alert-box.blue {
-    background-color: var(--blue-alert-color);
-    border: 1px solid var(--blue-alert-color);
+    color: var(--blue-bold-color);
+    background-color: var(--blue-pale-color);
+    border: 1px solid var(--blue-border-color);
 }
 
 .alert-box.yellow {
-    background-color: var(--yellow-alert-color);
-    border: 1px solid var(--yellow-alert-color);
+    color: var(--yellow-bold-color);
+    background-color: var(--yellow-pale-color);
+    border: 1px solid var(--yellow-border-color);
 }
 
 .alert-box.red {
-    background-color: var(--red-alert-color);
-    border: 1px solid var(--red-alert-color);
+    color: var(--red-bold-color);
+    background-color: var(--red-pale-color);
+    border: 1px solid var(--red-border-color);
 }
 
 .alert-box.pink {
-    background-color: var(--pink-alert-color);
-    border: 1px solid var(--pink-alert-color);
+    color: var(--pink-bold-color);
+    background-color: var(--pink-pale-color);
+    border: 1px solid var(--pink-border-color);
 }
 
 /* WINDOW 信息窗 */
@@ -1130,8 +1120,9 @@
     display: block;
 }
 
+/* 目录的“当前位置”是状态，用铜绿而不是黄铜 */
 .toc-a.li-active {
-    color: var(--themehovercolor);
+    color: var(--accent2-color);
 }
 
 .sider {
@@ -1151,7 +1142,7 @@
     width: 100%;
     height: 20px;
     line-height: 2;
-    background: var(--themecolor);
+    background: var(--accent2-color);
     transition: transform var(--motion-feedback) var(--motion-ease);
 }
 
@@ -1312,19 +1303,24 @@
 .siderbar { transition: transform var(--motion-feedback) var(--motion-ease); }
 .tab-link { font: inherit; border: 0; background: none; color: inherit; }
 [hidden] { display: none !important; }
-:focus-visible { outline: 2px solid var(--themecolor); outline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--accent2-color); outline-offset: 3px; }
 .timeline { position: relative; }
 #tcomment { min-height: 160px; }
 .comments-status { color: var(--text2-color); font-size: .9rem; }
 
 /* Keep the existing player appearance; use stronger selectors than the styles
    injected by APlayer's own bundle, including when it loads after navigation. */
-#aplayer.aplayer { background: var(--card-color); color: var(--text-color); font-family: inherit; min-height: 66px; }
+#aplayer.aplayer { background: var(--card-color); color: var(--text-color); font-family: inherit; min-height: 66px; box-shadow: inset 0 0 0 1px var(--line-color); border-radius: .5rem; }
 #aplayer .aplayer-info { border-bottom: 0; }
 #aplayer .aplayer-author, #aplayer .aplayer-list-author { display: none; }
 #aplayer .aplayer-icon { display: none; }
 #aplayer .aplayer-icon-menu { display: inline-block; }
+#aplayer .aplayer-icon path { fill: var(--text3-color); }
+#aplayer .aplayer-time { color: var(--text3-color); }
+#aplayer .aplayer-bar { background: var(--border-color); }
+#aplayer .aplayer-bar .aplayer-loaded { background: var(--text3-color); }
 #aplayer .aplayer-list ol li { border-top: 0; color: var(--text-color); }
+#aplayer .aplayer-list ol li .aplayer-list-index { color: var(--text3-color); }
 #aplayer .aplayer-list ol li:hover, #aplayer .aplayer-list ol li.aplayer-list-light { background: var(--nav-color); }
 #aplayer .aplayer-list ol { max-height: 96px; overflow-y: auto; }
 .aplayer-shell { min-height: 76px; }

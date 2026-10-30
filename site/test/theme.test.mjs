@@ -64,8 +64,17 @@ test('restored themes and repeated page initialization update the control withou
   assert.equal(status.dataset.visible, undefined);
   doc.cookie = 'theme=unexpected';
   syncTheme();
-  assert.equal(doc.documentElement.dataset.theme, 'light');
-  assert.equal(button.attributes.get('aria-label'), '切换主题，当前：跟随系统');
+  assert.equal(doc.documentElement.dataset.theme, 'dark', 'unknown values fall back to the dark default');
+  assert.equal(button.attributes.get('aria-label'), '切换主题，当前：深色模式');
+});
+
+test('visitors without a saved preference start in dark mode regardless of the system theme', t => {
+  const { button, icon, storage, doc } = fixture(t);
+  storage.delete('theme');
+  syncTheme();
+  assert.equal(doc.documentElement.dataset.theme, 'dark');
+  assert.equal(icon.className, 'icon-moon-inv');
+  assert.equal(button.attributes.get('aria-label'), '切换主题，当前：深色模式');
 });
 
 test('rapid toggles announce and persist the latest mode for its full display duration', t => {

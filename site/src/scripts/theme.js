@@ -2,13 +2,15 @@ import { motionDuration, motionEasing, prefersReducedMotion } from './animations
 
 const media = matchMedia('(prefers-color-scheme: dark)');
 const themeLabels = { auto: '跟随系统', light: '浅色模式', dark: '深色模式' };
+// The gallery is designed dark-first; visitors without a saved choice start there.
+const defaultTheme = 'dark';
 
 function savedTheme() {
   try {
-    const saved = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/)?.[1] || localStorage.getItem('theme') || 'auto';
-    return Object.hasOwn(themeLabels, saved) ? saved : 'auto';
+    const saved = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/)?.[1] || localStorage.getItem('theme') || defaultTheme;
+    return Object.hasOwn(themeLabels, saved) ? saved : defaultTheme;
   } catch {
-    return 'auto';
+    return defaultTheme;
   }
 }
 

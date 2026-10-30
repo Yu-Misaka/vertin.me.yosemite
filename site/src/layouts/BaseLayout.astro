@@ -46,9 +46,9 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
 
     <script is:inline>
       (() => {
-        let saved = 'auto';
+        let saved = 'dark';
         try {
-          saved = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/)?.[1] || localStorage.getItem('theme') || 'auto';
+          saved = document.cookie.match(/(?:^|;)\s*theme=([^;]+)/)?.[1] || localStorage.getItem('theme') || 'dark';
         } catch {}
         document.documentElement.dataset.theme = saved === 'auto'
           ? (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light')

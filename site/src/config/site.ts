@@ -27,7 +27,7 @@ export const site = {
   },
   postTitleAfter: "boldLine" as PostTitleAfter,
   ccLicense: "by-nc-sa" as const,
-  themeColor: "yellow" as const,
+  themeColor: "brass" as const,
   navItems: [
     { label: "首页", href: "/", order: 0 },
     { label: "归墟 Archives", href: "/archives", order: 2 }
@@ -39,7 +39,8 @@ export const site = {
   },
   aplayer: {
     enabled: true,
-    theme: "#ab8748",
+    // APlayer writes this into inline styles, so a CSS variable follows the theme.
+    theme: "var(--accent2-color)",
     listFolded: true,
     listMaxHeight: 90,
     audio: [

@@ -5,42 +5,64 @@
  * 由 Vite 统一打包；页面过渡统一定义在 motion.css
  */
 
+/* 陈列馆配色：墙面与展台都退后，靠细描边框出展品；
+   黄铜（--themecolor）是灯光，铜绿是状态，靛蓝只用于选中。 */
 :root {
-	--background-color: #f6f6F6F6;
-	--pure-color: #ffffff;
-	--card-color: #ffffff;
-	--card2-color: #fbfbfb;
-	--pure-grey-color: #f5f5f5;
-	--border-color: #e0e0e0;
-	--line-color: #ebebeb;
-	--nav-color: #e4e6e7;
-	--nav-text-color: #374043;
-	--text-color: #333;
-	--text2-color: #444;
-	--hover-color: #f8f8f8;
+	--background-color: #ebe7e0;
+	--on-accent-color: #ffffff;
+	--card-color: #f7f5f0;
+	--card2-color: #f1eee8;
+	--pure-grey-color: #efebe4;
+	--border-color: #dcd6cc;
+	--line-color: #e4dfd6;
+	--nav-color: #e2ddd4;
+	--nav-text-color: #4a453e;
+	--heading-color: #1f1d1a;
+	--text-color: #2e2b27;
+	--text2-color: #5f5a52;
+	--text3-color: #6f685e;
+	--hover-color: #f0ece5;
+	--accent2-color: #38716f;
+	--selection-color: rgb(98 98 168 / 22%);
 	/* Light 颜色变量 */
 }
 
 [data-theme="dark"] {
-	--background-color: #121416;
-	--pure-color: #f2f2f2;
-	--card-color: #222426;
-	--card2-color: #2e2e2e;
-	--pure-grey-color: #323232;
-	--border-color: #333739;
-	--line-color: #363a3c;
-	--nav-color: #262a2b;
-	--nav-text-color: #c1bcb4;
-	--text-color: #c1bcb4;
-	--text2-color: #bdb7af;
-	--hover-color: #262a2b;
+	--background-color: #0e0f11;
+	--on-accent-color: #0e0f11;
+	--card-color: #16181b;
+	--card2-color: #1c1e22;
+	--pure-grey-color: #1b1d21;
+	--border-color: #2a2d32;
+	--line-color: #23252a;
+	--nav-color: #1f2125;
+	--nav-text-color: #b3ab9e;
+	--heading-color: #e4ddcf;
+	--text-color: #c2baac;
+	--text2-color: #9a9286;
+	--text3-color: #8a8378;
+	--hover-color: #1f2125;
+	--accent2-color: #6aa5a3;
+	--selection-color: rgb(124 124 176 / 32%);
 	/* Dark 颜色变量 */
 
 	img {
 		filter: brightness(0.8);
 	}
 
+	/* 头像是被照亮的展品，保持原亮度 */
+	.el-avatar img {
+		filter: none;
+	}
+
 	/* Dark 颜色变量 */
+}
+
+/* 列表封面像展柜：默认压暗，悬停时亮灯 */
+@media (hover: hover) and (pointer: fine) {
+	[data-theme="dark"] .post--index:not(.post--single):hover .post-media img {
+		filter: none;
+	}
 }
 
 * {
@@ -273,10 +295,12 @@ pre code {
 	color: var(--text-color);
 }
 
-/* Shiki 双主题支持（仅覆盖暗色主题） */
+/* Shiki 双主题支持：代码块底色跟随展台，不用主题自带的底色 */
+.astro-code {
+	background-color: var(--pure-grey-color) !important;
+}
 [data-theme="dark"] .astro-code {
 	color: var(--shiki-dark) !important;
-	background-color: var(--shiki-dark-bg) !important;
 }
 [data-theme="dark"] .astro-code span {
 	color: var(--shiki-dark) !important;
@@ -1168,20 +1192,21 @@ body>.wrapper {
 	opacity: .65;
 }
 
+/* 细描边画在内容之上，封面图边缘也被框住；悬停时描边染上一点黄铜 */
 .post-inner::after {
 	content: "";
 	position: absolute;
 	inset: 0;
-	border-radius: 0.85rem;
+	border-radius: inherit;
 	pointer-events: none;
-	opacity: 0;
-	transition: opacity var(--motion-feedback) var(--motion-ease);
+	transition: box-shadow var(--motion-feedback) var(--motion-ease);
 	box-shadow:
-		inset 0 0 0 1px rgba(0, 0, 0, .03);
+		inset 0 0 0 1px var(--line-color);
 }
 
 .post:hover .post-inner::after {
-	opacity: 1;
+	box-shadow:
+		inset 0 0 0 1px color-mix(in srgb, var(--themecolor) 28%, var(--border-color));
 }
 
 .post-item {
@@ -1475,7 +1500,7 @@ ol p {
 }
 
 li:before {
-	color: #858585
+	color: var(--text3-color)
 }
 
 .comment-title {
@@ -1494,6 +1519,16 @@ h6 {
 	font-family: "LXGW WenKai GB", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimSun, sans-serif;
 	font-weight: 400;
 	color: var(--text-color);
+}
+
+.comment-title,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	color: var(--heading-color);
 }
 
 b,
@@ -1531,7 +1566,7 @@ strong {
 }
 
 .meta {
-	color: #767676;
+	color: var(--text3-color);
 	text-transform: uppercase;
 	letter-spacing: 2px
 }
@@ -1547,12 +1582,12 @@ strong {
 }
 
 .meta-item:hover {
-	color: #999
+	color: var(--text2-color)
 }
 
 .meta-item:hover .icon-ui:before,
 .meta-item:hover:before {
-	color: #999
+	color: var(--text2-color)
 }
 
 .nav {
@@ -1597,12 +1632,16 @@ strong {
 
 .post-inner {
 	border-radius: 0.75rem;
-	box-shadow: 0 0 6px #00000008;
 }
 
 .post-item {
 	background-color: var(--card-color);
 	transition: background-color var(--motion-color) var(--motion-ease), color var(--motion-color) var(--motion-ease);
+}
+
+/* 展台顶光：无封面卡片顶部一层很淡的暖光 */
+[data-theme="dark"] .post--text .post-header {
+	background-image: radial-gradient(ellipse 70% 120px at 50% 0, rgb(255 220 170 / 3.5%), transparent);
 }
 
 .post-comments .post-wrapper:before,
@@ -1723,7 +1762,7 @@ strong {
 .cm {
 	margin-top: 1rem;
 	margin-bottom: 1rem;
-	color: #aaa;
+	color: var(--text3-color);
 	font-size: .75rem
 }
 
@@ -1742,7 +1781,7 @@ strong {
 	padding: .1rem .3rem;
 	border-radius: 0.3rem;
 	font-size: .72rem;
-	color: var(--pure-color);
+	color: var(--on-accent-color);
 	background-color: color-mix(in srgb,
 			var(--themecolor) 85%,
 			var(--card-color));
@@ -1949,7 +1988,7 @@ textarea:focus-within+.CtBoxBar {
 	border-radius: .85rem;
 	font-size: 0.95rem;
 	background: var(--themecolor);
-	color: var(--pure-color);
+	color: var(--on-accent-color);
 	border: none;
 	cursor: pointer;
 	transition: transform var(--motion-feedback) var(--motion-ease), background-color var(--motion-color) var(--motion-ease), color var(--motion-color) var(--motion-ease), box-shadow var(--motion-feedback) var(--motion-ease);
@@ -2370,9 +2409,9 @@ input:-webkit-autofill:active {
 	background-color: rgb(62 62 62 / 72%)
 }
 
-/* 自定义选中文本的背景色和文字颜色 */
+/* 自定义选中文本的背景色：取头像光环的靛蓝 */
 ::selection {
-    background-color: color-mix(in srgb, var(--themecolor) 18%, transparent);
+    background-color: var(--selection-color);
 }
 
 /* 本来想改下样式，但这2000行css不敢动 */
@@ -2380,11 +2419,6 @@ input:-webkit-autofill:active {
 
 .pace .pace-progress {
 	background: var(--themecolor) !important;
-}
-
-/* 自定义选中文本的背景色和文字颜色 */
-::selection {
-	background-color: color-mix(in srgb, var(--themecolor) 18%, transparent);
 }
 
 /* 加密文章组件设计 */

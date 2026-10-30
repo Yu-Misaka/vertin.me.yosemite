@@ -8,7 +8,8 @@ const lightMap: Record<ThemeColor | string, { theme: string; hover: string }> = 
   red: { theme: "#cd575f", hover: "#b84a4a" },
   purple: { theme: "#8f7acb", hover: "#6d5fb3" },
   cyan: { theme: "#5fb3b8", hover: "#3f8f93" },
-  orange: { theme: "#e39a5c", hover: "#c97a3f" }
+  orange: { theme: "#e39a5c", hover: "#c97a3f" },
+  brass: { theme: "#87672f", hover: "#6f5424" }
 };
 
 const darkMap: Record<ThemeColor | string, { theme: string; hover: string }> = {
@@ -19,7 +20,8 @@ const darkMap: Record<ThemeColor | string, { theme: string; hover: string }> = {
   red: { theme: "#9a444b", hover: "#b84a4a" },
   purple: { theme: "#5f548a", hover: "#7668a8" },
   cyan: { theme: "#3f7a7f", hover: "#5f9ea3" },
-  orange: { theme: "#9f5a2f", hover: "#b86a3a" }
+  orange: { theme: "#9f5a2f", hover: "#b86a3a" },
+  brass: { theme: "#b8945c", hover: "#d0ad72" }
 };
 
 export function getThemeTokens(color: ThemeColor | string) {

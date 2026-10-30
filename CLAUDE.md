@@ -28,7 +28,7 @@ npx tsc --noEmit   # TypeScript check (used in CI)
 - `[slug].astro` — standalone pages
 - `page/[page].astro`, `tags/[tag].astro`, `categories/[category].astro` — listing pages
 
-**Site Config** (`site/src/config/site.ts`): Central configuration for title, navigation, pagination, comments (Twikoo), music (APlayer), theme color, and feature toggles. Theme color tokens are in `site/src/config/theme.ts` (8 color options with light/dark variants).
+**Site Config** (`site/src/config/site.ts`): Central configuration for title, navigation, pagination, comments (Twikoo), music (APlayer), theme color, and feature toggles. Theme color tokens are in `site/src/config/theme.ts` (9 color options with light/dark variants; the site uses `brass`).
 
 **Markdown Pipeline**: remark GFM + remark-math, followed by build-time shortcode compilation/image metadata in `src/rehype/rehype-content.mjs`, rehype-katex and table wrapping. Preserve the legacy shortcode syntax and code examples. Never reintroduce whole-body client-side parsing.
 
