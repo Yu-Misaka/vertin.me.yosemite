@@ -913,6 +913,9 @@
 }
 
 .tab-content {
+    /* Keep pane margins inside the measured height, including while the height
+       animation prevents them from collapsing through this container. */
+    display: flow-root;
     padding: 28px 0 0;
     background-color: var(--card-color);
 }
