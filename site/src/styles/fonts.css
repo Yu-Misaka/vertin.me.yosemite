@@ -1,6 +1,18 @@
 /* Source Serif 4 sets Latin text; LXGW WenKai GB (virtual:site-fonts.css) sets Han.
    The Latin range leaves out — ― and … so Chinese dashes and ellipses keep their
    full-width WenKai forms, while quotes and apostrophes follow the Latin face. */
+
+/* Player truncation uses a Latin ellipsis even when WenKai punctuation loads
+   on a later page. Reuse the existing font file and leave body punctuation alone. */
+@font-face {
+	font-family: "Source Serif 4 UI";
+	font-style: normal;
+	font-display: swap;
+	font-weight: 200 900;
+	src: url("@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2") format("woff2-variations");
+	unicode-range: U+2026;
+}
+
 @font-face {
 	font-family: "Source Serif 4";
 	font-style: normal;

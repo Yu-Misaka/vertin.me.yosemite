@@ -624,9 +624,12 @@
 /* 时间线 */
 
 :is(#timeline, .timeline) {
+    --timeline-axis: 14.5px;
+    --timeline-inset: 40px;
+    --timeline-content-inset: 24px;
     position: relative;
     margin: 28px 0;
-    padding-left: 40px;
+    padding-left: var(--timeline-inset);
 }
 
 :is(#timeline, .timeline)::before {
@@ -634,27 +637,34 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 14px;
+    left: var(--timeline-axis);
     width: 1px;
+    transform: translateX(-50%);
     background-color: var(--border-color);
 }
 
 .timeline-item {
+    --timeline-item-padding: 14px;
+    --timeline-date-size: .75rem;
+    --timeline-date-line-height: 1.4;
+    /* The dot and connector share the rail and the date line's center. */
+    --timeline-marker-x: calc(var(--timeline-axis) - var(--timeline-inset));
+    --timeline-marker-y: calc(var(--timeline-item-padding) + var(--timeline-date-size) * var(--timeline-date-line-height) / 2);
     position: relative;
-    padding: 14px 0;
+    padding: var(--timeline-item-padding) 0;
     transition: opacity var(--motion-feedback) var(--motion-ease);
 }
 
 .timeline-item::before {
     content: '';
     position: absolute;
-    left: 2px;
-    top: 21px;
-    width: 30px;
+    left: var(--timeline-marker-x);
+    top: var(--timeline-marker-y);
+    width: calc(var(--timeline-inset) + var(--timeline-content-inset) - var(--timeline-axis) - 6px);
     height: 1px;
     border-radius: 1px;
     background-color: var(--line-color);
-    transform: translateX(-50%);
+    transform: translateY(-50%);
     opacity: 0.9;
     transition: opacity var(--motion-feedback) var(--motion-ease);
 }
@@ -662,7 +672,7 @@
 .timeline-item:not(:last-child)::after {
     content: '';
     position: absolute;
-    left: 24px;
+    left: var(--timeline-content-inset);
     right: 0;
     bottom: 0;
     height: 1px;
@@ -672,13 +682,14 @@
 
 .timeline-dot {
     position: absolute;
-    left: -30px;
-    top: 16px;
+    left: var(--timeline-marker-x);
+    top: var(--timeline-marker-y);
     width: 9px;
     height: 9px;
     border-radius: 50%;
     background-color: var(--card-color);
     border: 1.5px solid var(--border-color);
+    transform: translate(-50%, -50%);
     z-index: 1;
     transition: border-color var(--motion-color) var(--motion-ease), background-color var(--motion-color) var(--motion-ease), transform var(--motion-feedback) var(--motion-ease);
 }
@@ -708,7 +719,7 @@
 .timeline-item:hover .timeline-dot {
     border-color: var(--themecolor);
     background-color: color-mix(in srgb, var(--themecolor) 18%, var(--card-color));
-    transform: scale(1.15);
+    transform: translate(-50%, -50%) scale(1.15);
 }
 
 .timeline-item:hover .timeline-dot::after {
@@ -724,12 +735,12 @@
 }
 
 .timeline-content {
-    margin-left: 24px;
+    margin-left: var(--timeline-content-inset);
 }
 
 .timeline-date {
-    font-size: 0.75rem;
-    line-height: 1.4;
+    font-size: var(--timeline-date-size);
+    line-height: var(--timeline-date-line-height);
     color: var(--text2-color);
     margin-bottom: 4px;
 }
@@ -757,20 +768,12 @@
    the title leads, the italic role line sits right under it and the details
    follow closely. Space separates entries, not lines within one entry. */
 .post-content .timeline-item {
-    padding: 22px 0;
-}
-
-.post-content .timeline-item::before {
-    top: 29px;
-}
-
-.post-content .timeline-dot {
-    top: 24px;
+    --timeline-item-padding: 22px;
+    --timeline-date-size: .8rem;
 }
 
 .post-content .timeline-date {
     margin-bottom: 2px;
-    font-size: .8rem;
     letter-spacing: .02em;
     font-variant-numeric: tabular-nums lining-nums;
     color: var(--text3-color);
@@ -933,28 +936,9 @@
 /* 窄屏收窄时间线的轨道与缩进，把宽度还给正文 */
 @media (max-width: 578.98px) {
     .post-content :is(#timeline, .timeline) {
-        padding-left: 26px;
-    }
-
-    .post-content :is(#timeline, .timeline)::before {
-        left: 8px;
-    }
-
-    .post-content .timeline-dot {
-        left: -22.5px;
-    }
-
-    .post-content .timeline-item::before {
-        left: 0;
-        width: 18px;
-    }
-
-    .post-content .timeline-item:not(:last-child)::after {
-        left: 14px;
-    }
-
-    .post-content .timeline-content {
-        margin-left: 14px;
+        --timeline-axis: 8.5px;
+        --timeline-inset: 26px;
+        --timeline-content-inset: 14px;
     }
 }
 
@@ -1358,7 +1342,7 @@
 
 /* Keep the existing player appearance; use stronger selectors than the styles
    injected by APlayer's own bundle, including when it loads after navigation. */
-#aplayer.aplayer { background: var(--card-color); color: var(--text-color); font-family: inherit; min-height: 66px; box-shadow: inset 0 0 0 1px var(--line-color); border-radius: .5rem; }
+#aplayer.aplayer { background: var(--card-color); color: var(--text-color); font-family: "Source Serif 4 UI", var(--font-body); min-height: 66px; box-shadow: inset 0 0 0 1px var(--line-color); border-radius: .5rem; }
 #aplayer .aplayer-info { border-bottom: 0; }
 #aplayer .aplayer-author, #aplayer .aplayer-list-author { display: none; }
 #aplayer .aplayer-icon { display: none; }

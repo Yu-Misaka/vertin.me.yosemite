@@ -250,9 +250,10 @@ table tr:has(td):hover {
 }
 
 .icon-ui:before {
-	vertical-align: bottom;
 	font-size: 20px;
-	margin: 4px;
+	margin: 0;
+	flex: none;
+	letter-spacing: 0;
 	transition: color var(--motion-color) var(--motion-ease);
 }
 
@@ -761,7 +762,9 @@ ul,
 }
 
 .meta-item {
-	display: inline;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
 	padding-right: 8px;
 	white-space: nowrap;
 	cursor: pointer
@@ -773,7 +776,9 @@ ul,
 }
 
 .meta-count {
-	margin-left: -4px
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis
 }
 
 .nav {
