@@ -48,9 +48,9 @@ Co-authored a Lean 4 formalization of the combinatorial framework for nilpotent 
 
 [timeline-event date="2026" title="**A Formal Proof of the Sticky-Kakeya Theorem**"]
 
-Co-authored a Lean 4 formalization of Theorem 5.2 in Wang and Zahl’s work on sticky Kakeya sets, subsequently incorporated into a machine-checked proof of the full three-dimensional Kakeya conjecture. The formalization and its contributors were acknowledged in Guth, Wang, and Zahl’s streamlined proof.
+Co-authored a Lean 4 formalization of Theorem 5.2 in Wang and Zahl’s work on sticky Kakeya sets, subsequently incorporated into a machine-checked proof of the full three-dimensional Kakeya conjecture. The formalization and its contributors were acknowledged in Guth, Wang, and Zahl’s [streamlined proof](https://arxiv.org/abs/2601.14411).
 
-[Code: 3d-sticky-kakeya](https://github.com/M32026/3d-sticky-kakeya) · [Paper: arXiv:2601.14411](https://arxiv.org/abs/2601.14411)
+[Code: 3d-sticky-kakeya](https://github.com/M32026/3d-sticky-kakeya)
 
 [/timeline-event]
 
