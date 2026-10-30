@@ -15,7 +15,7 @@ export const site = {
   footerScript: "",
   postsPerPage: 5,
   leftSideCustomCode:
-    "<img src=\"/persistent-image/2252397-black.webp\" />",
+    "<img src=\"/persistent-image/2252397-black.svg\" alt=\"\" />",
   show: {
     search: true,
     toc: true,

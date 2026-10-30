@@ -81,19 +81,17 @@ const formatChars = (value: number) => {
               </div>
 
               <h2 id="archive-tags">标签</h2>
-              <section class="section-body">
-                <div class="cloud-container">
-                  {tags.length ? (
-                    tags.map((tag) => (
-                      <a href={`/tags/${encodeURIComponent(tag)}/`} class="cloud-item">
-                        {tag}
-                      </a>
-                    ))
-                  ) : (
-                    <p>没有任何标签</p>
-                  )}
-                </div>
-              </section>
+              <div class="cloud-container archive-tags">
+                {tags.length ? (
+                  tags.map((tag) => (
+                    <a href={`/tags/${encodeURIComponent(tag)}/`} class="cloud-item">
+                      {tag}
+                    </a>
+                  ))
+                ) : (
+                  <p>没有任何标签</p>
+                )}
+              </div>
 
               <h2 id="archive-timeline">时间线</h2>
               {years.map((year) => (
@@ -127,3 +125,16 @@ const formatChars = (value: number) => {
     </div>
   </nav>
 </BaseLayout>
+
+<style>
+  /* Match the heading's spacing without the sidebar section's extra padding. */
+  .archive-tags {
+    margin-bottom: 16px;
+  }
+
+  @media screen and (min-width: 579px) {
+    .archive-tags {
+      margin-bottom: 24px;
+    }
+  }
+</style>
