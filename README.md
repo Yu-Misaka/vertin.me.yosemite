@@ -1,21 +1,64 @@
+<div align="center">
+
+<img src="site/public/images/avatar.webp" width="112" height="112" alt="Vertin 头像">
+
 # vertin.me · Yosemite
 
-Vertin 个人博客的 Astro 静态站点实现。以 Markdown 管理文章和独立页面，保留简洁的阅读布局，并围绕页面切换、目录、主题与长文阅读持续调整。
+**Vertin 个人博客的 Astro 静态站点实现**
+
+以 Markdown 管理文章和独立页面，保留简洁的阅读布局，并围绕页面切换、目录、主题与长文阅读持续调整。
+
+[![CI](https://img.shields.io/github/actions/workflow/status/Yu-Misaka/vertin.me.yosemite/ci.yml?branch=main&style=flat-square&label=CI&logo=github&logoColor=white)](https://github.com/Yu-Misaka/vertin.me.yosemite/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/Yu-Misaka/vertin.me.yosemite?style=flat-square)](LICENSE)
+[![Astro](https://img.shields.io/badge/Astro-7-BC52EE?style=flat-square&logo=astro&logoColor=white)](https://astro.build/)
+[![Node.js](https://img.shields.io/badge/Node.js-24-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![vertin.me](https://img.shields.io/website?url=https%3A%2F%2Fvertin.me&style=flat-square&label=vertin.me)](https://vertin.me)
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
+
+</div>
+
+<p align="center">
+  <img src="docs/images/homepage.webp" alt="Yosemite 深色主题首页，滚动至 Mathematica! 文章封面" width="880">
+  <br>
+  <sub>深色主题首页 · 滚动至「Mathematica!」文章封面</sub>
+</p>
+
+## 简介
 
 本项目以 [MoXiify](https://github.com/MoXiaoXi233) 的 [PureSuck-theme](https://github.com/MoXiaoXi233/PureSuck-theme) 为基础，借助 Codex 迁移到 Astro，沿用了原主题的视觉设计与短代码写法。感谢原作者的设计和开源贡献。
 
 这是为个人站点维护的仓库，配置、内容和资源均按本站需要组织。如果你希望使用原版 Typecho 主题，请前往 [PureSuck-theme](https://github.com/MoXiaoXi233/PureSuck-theme)。
 
-![Yosemite 深色主题首页，滚动至 Mathematica! 文章封面](docs/images/homepage.webp)
+## 目录
+
+- [简介](#简介)
+- [功能](#功能)
+- [快速开始](#快速开始)
+- [项目结构](#项目结构)
+- [站点配置](#站点配置)
+- [写作](#写作)
+  - [文章](#文章)
+  - [独立页面](#独立页面)
+  - [Markdown 与公式](#markdown-与公式)
+  - [主题短代码](#主题短代码)
+- [评论与音乐](#评论与音乐)
+  - [Twikoo](#twikoo)
+  - [APlayer](#aplayer)
+- [构建与部署](#构建与部署)
+- [维护说明](#维护说明)
+- [致谢与许可](#致谢与许可)
 
 ## 功能
 
-- **内容与导航**：Markdown 文章、独立页面、分页、分类、标签和归档；独立页面自动合并到导航。
-- **阅读体验**：文章目录、阅读时间、代码高亮、KaTeX 数学公式、图注与图片缩放。
-- **主题与动效**：浅色、深色及跟随系统模式；页面切换、封面衔接和局部控件动效，支持减少动态效果设置。
-- **正文组件**：提示框、彩色信息窗、友链卡片、折叠面板、Tabs、时间线、B 站视频和图片网格。
-- **搜索与互动**：Pagefind 静态全文搜索、Twikoo 评论、跨页面保留播放状态的 APlayer 音乐播放器。
-- **静态构建**：Astro 7 与 Vite 8；公式、短代码和图片元数据在构建时处理，搜索、播放器与评论按需加载。
+| 模块 | 说明 |
+| --- | --- |
+| **内容与导航** | Markdown 文章、独立页面、分页、分类、标签和归档；独立页面自动合并到导航。 |
+| **阅读体验** | 文章目录、阅读时间、代码高亮、KaTeX 数学公式、图注与图片缩放。 |
+| **主题与动效** | 浅色、深色及跟随系统模式；页面切换、封面衔接和局部控件动效，支持减少动态效果设置。 |
+| **正文组件** | 提示框、彩色信息窗、友链卡片、折叠面板、Tabs、时间线、B 站视频和图片网格。 |
+| **搜索与互动** | Pagefind 静态全文搜索、Twikoo 评论、跨页面保留播放状态的 APlayer 音乐播放器。 |
+| **静态构建** | Astro 7 与 Vite 8；公式、短代码和图片元数据在构建时处理，搜索、播放器与评论按需加载。 |
 
 ## 快速开始
 
@@ -46,7 +89,7 @@ npm run dev
 ```text
 .
 ├── .github/workflows/ci.yml   # 类型检查、回归测试和构建验证
-├── docs/motion-design.md     # 动效设计与维护约束
+├── docs/motion-design.md      # 动效设计与维护约束
 ├── LICENSE
 └── site/
     ├── astro.config.mjs      # 静态输出与 Markdown 处理链
@@ -183,9 +226,13 @@ Tabs、时间线和图片网格可分多行编写；信息窗中需要显式换�
 
 ## 评论与音乐
 
-**Twikoo**：在 `site.ts` 中设置 `comments.provider = "twikoo"`，并将 `comments.envId` 替换为自己的服务地址或环境 ID。评论服务需要单独部署；地址为空时，页面显示“评论区已关闭”。评论组件接近视口时才加载。
+### Twikoo
 
-**APlayer**：通过 `aplayer.enabled` 开关播放器，在 `aplayer.audio` 中设置曲名、音频地址与封面。播放器在页面切换间保留状态，音频在点击播放后下载。本地音频和封面可放在 `site/public/playlist/`。
+在 `site.ts` 中设置 `comments.provider = "twikoo"`，并将 `comments.envId` 替换为自己的服务地址或环境 ID。评论服务需要单独部署；地址为空时，页面显示“评论区已关闭”。评论组件接近视口时才加载。
+
+### APlayer
+
+通过 `aplayer.enabled` 开关播放器，在 `aplayer.audio` 中设置曲名、音频地址与封面。播放器在页面切换间保留状态，音频在点击播放后下载。本地音频和封面可放在 `site/public/playlist/`。
 
 ## 构建与部署
 
