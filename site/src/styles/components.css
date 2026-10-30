@@ -149,8 +149,11 @@
     padding: 10px 20px;
     transition: transform var(--motion-feedback) var(--motion-ease), border-color var(--motion-color) var(--motion-ease);
     transform: scale(1);
-    font-weight: bold;
+    /* 文楷没有粗体，加粗只会被浏览器伪造成糊边；用中粗拉丁 + 色块承担强调 */
+    font-weight: 500;
     font-size: 0.95rem;
+    line-height: 1.7;
+    align-items: baseline;
 }
 
 .alert-box:hover {
@@ -803,6 +806,78 @@
     color: var(--themehovercolor);
 }
 
+/* Timelines inside an article read as entries: the date is a quiet label,
+   the title leads, the italic role line sits right under it and the details
+   follow closely. Space separates entries, not lines within one entry. */
+.post-content .timeline-item {
+    padding: 22px 0;
+}
+
+.post-content .timeline-item::before {
+    top: 29px;
+}
+
+.post-content .timeline-dot {
+    top: 24px;
+}
+
+.post-content .timeline-date {
+    margin-bottom: 2px;
+    font-size: .8rem;
+    letter-spacing: .02em;
+    font-variant-numeric: tabular-nums lining-nums;
+    color: var(--text3-color);
+}
+
+.post-content .timeline-title {
+    font-size: 1.08rem;
+    line-height: 1.45;
+    color: var(--heading-color);
+}
+
+.post-content .timeline-title strong {
+    background: none;
+}
+
+.post-content .timeline-description {
+    margin-top: .3em;
+}
+
+.post-content .timeline-description > * {
+    margin: .55em 0 0;
+}
+
+.post-content .timeline-description > .timeline-subtitle {
+    margin-top: 0;
+    font-size: .95rem;
+    color: var(--text2-color);
+}
+
+.post-content .timeline-description > :is(ul, ol) {
+    margin: .5em 0 0;
+}
+
+.post-content .timeline-description > :last-child {
+    margin-bottom: 0;
+}
+
+.post-content .timeline-description li {
+    margin: .3em 0;
+}
+
+/* 简历是英文文档：西文行高与连字；只在窄屏为长词开启断词，宽屏保持整词 */
+.post-content--cv {
+    line-height: 1.6;
+    font-variant-ligatures: common-ligatures;
+}
+
+@media (max-width: 578.98px) {
+    .post-content--cv {
+        hyphens: auto;
+        hyphenate-limit-chars: 9 4 4;
+    }
+}
+
 @media (hover: none) {
     :is(#timeline, .timeline):hover .timeline-item {
         opacity: 1;
@@ -905,9 +980,41 @@
 
 .tab-pane.active > *:first-child { margin-top: 0; }
 
-/* Align plain CV panels with the timeline's original 40px + 24px inset. */
+/* Align plain CV panels with the timeline text (40px rail + 24px gutter). */
 .post-content--cv .tab-pane:not(:has(> .timeline)) {
     padding-left: 64px;
+}
+
+/* 窄屏收窄时间线的轨道与缩进，把宽度还给正文 */
+@media (max-width: 578.98px) {
+    .post-content :is(#timeline, .timeline) {
+        padding-left: 26px;
+    }
+
+    .post-content :is(#timeline, .timeline)::before {
+        left: 8px;
+    }
+
+    .post-content .timeline-dot {
+        left: -22.5px;
+    }
+
+    .post-content .timeline-item::before {
+        left: 0;
+        width: 18px;
+    }
+
+    .post-content .timeline-item:not(:last-child)::after {
+        left: 14px;
+    }
+
+    .post-content .timeline-content {
+        margin-left: 14px;
+    }
+
+    .post-content--cv .tab-pane:not(:has(> .timeline)) {
+        padding-left: 40px;
+    }
 }
 
 @media (max-width: 768px) {

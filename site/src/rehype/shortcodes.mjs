@@ -136,7 +136,9 @@ export function compileShortcodes(source) {
       const events = inner.replace(
         /\[timeline-event date="([^"]*)" title="([^"]*)"\]([\s\S]*?)\[\/timeline-event\]/gi,
         function (match, date, title, text) {
-          const body = trimEmptyParagraphs(stripLeadingBreaks(text));
+          // An opening paragraph that is entirely italic is the event's role line.
+          const body = trimEmptyParagraphs(stripLeadingBreaks(text))
+            .replace(/^((?:\s|<\/p>)*)<p>(<em>(?:(?!<\/?em\b|<\/p>)[\s\S])*<\/em>)<\/p>/i, '$1<p class="timeline-subtitle">$2</p>');
           return (
             '<div class="timeline-item">' +
             '<div class="timeline-dot"></div>' +
