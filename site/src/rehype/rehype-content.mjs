@@ -37,8 +37,9 @@ function decorate(parent, inFigure = false, inLink = false) {
     }
     if (node.type === 'text' && !inLink && /https?:\/\//.test(node.value)) {
       let end = 0;
-      for (const match of node.value.matchAll(/https?:\/\/[^\s<>]+/g)) {
-        const url = match[0].replace(/[)\].,!?:;，。！？；：、”’》】）]+$/, '');
+      // Bare URLs end at CJK text, full-width punctuation or curly quotes written right after them.
+      for (const match of node.value.matchAll(/https?:\/\/[^\s<>\u2018-\u201f\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]+/g)) {
+        const url = match[0].replace(/[)\].,!?:;]+$/, '');
         if (match.index > end) next.push({ type: 'text', value: node.value.slice(end, match.index) });
         next.push(element('a', { href: url }, [{ type: 'text', value: url }]));
         end = match.index + url.length;
@@ -52,7 +53,7 @@ function decorate(parent, inFigure = false, inLink = false) {
   for (const node of next) {
     if (classes(node).includes('friendsboard-item')) {
       if (!group) {
-        group = element('div', { className: ['friendsboard-list'] });
+        group = element('div', { className: ['friendsboard-list'], role: 'list' });
         parent.children.push(group);
       }
       group.children.push(node);

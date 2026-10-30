@@ -25,6 +25,10 @@
 	--accent2-color: #38716f;
 	--selection-color: rgb(98 98 168 / 22%);
 	/* Light 颜色变量 */
+
+	/* 字体：拉丁字母用 Source Serif 4（真斜体、真粗细），汉字用霞鹜文楷 */
+	--font-body: "Source Serif 4", "LXGW WenKai GB", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimSun, sans-serif;
+	--font-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", "LXGW WenKai GB", monospace;
 }
 
 [data-theme="dark"] {
@@ -85,6 +89,10 @@ html {
 	scroll-behavior: smooth;
 	text-autospace: normal;
 	/* After Chrome 140+++ */
+	/* 行首的全角开括号收半宽，避免段落左缘被“（”顶出半格 */
+	text-spacing-trim: trim-start;
+	/* 汉字没有斜体：em 里的中文保持直立，拉丁字母使用真斜体 */
+	font-synthesis-style: none;
 }
 
 body {
@@ -256,27 +264,23 @@ table tr:has(td):hover {
 	content: "\E80D"
 }
 
+/* Inline code is a word in the sentence: it wraps with the line and never
+   raises the line box, so paragraphs keep one even rhythm. */
 code,
 kbd {
-	position: relative;
-	display: inline-block;
-	top: -1px;
-	margin: 4px 5px;
-	padding-right: 8px;
-	padding-left: 8px;
-	font-family: ui-monospace, "JetBrains Mono", "Fira Code", SFMono-Regular, Menlo, Consolas, monospace;
+	font-family: var(--font-mono);
 }
 
 /* 代码块本体 */
 pre {
-	padding: 12px 16px;
+	padding: 1.1em 1.4em;
 	margin: 1.2em 0;
 	background: var(--pure-grey-color);
 	border: 1px solid var(--line-color);
 	border-radius: 8px;
 	overflow: auto;
-	font-family: ui-monospace, JetBrains Mono, SFMono-Regular, Menlo, Monaco, Consolas, Andale Mono, Liberation Mono, Ubuntu Mono, Courier New, monospace;
-	font-size: .9em;
+	font-family: var(--font-mono);
+	font-size: .85em;
 	word-wrap: break-word;
 	position: relative;
 	max-height: 750px;
@@ -286,12 +290,8 @@ pre {
 pre code {
 	display: block;
 	background: transparent;
-	padding: 0.75em 1em;
-
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	font-size: 0.92em;
-	line-height: 1.7;
-
+	font-size: inherit;
+	line-height: 1.65;
 	color: var(--text-color);
 }
 
@@ -309,17 +309,21 @@ pre code {
 	text-decoration: var(--shiki-dark-text-decoration) !important;
 }
 
-/* 行内代码 */
-:not(pre)>code {
+/* 行内代码是句子里的一个词：随行折行；line-height 归零，等宽字体的
+   上下伸部和内边距就不会撑高所在行，段落保持统一行距 */
+:not(pre)>code,
+kbd {
+	margin: 0 .1em;
+	padding: .12em .38em;
 	background: var(--hover-color);
 	border: 1px solid var(--line-color);
-
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	font-size: 0.92em;
-
-	border-radius: 0.4rem;
+	border-radius: .35em;
+	font-size: .86em;
+	line-height: 0;
 	color: var(--text-color);
-	white-space: nowrap;
+	overflow-wrap: anywhere;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
 }
 
 .form {
@@ -362,59 +366,68 @@ html {
 }
 
 .h1,
-.post-title,
-h1 {
+.post-title {
 	font-size: 1.75rem;
 	line-height: 40px
 }
 
-.h2,
-h2 {
-	font-size: 1.5rem;
-	line-height: 36px
+/* 标题阶梯：相邻两级约 1.2 倍，统一 1.4 行高；标题点悬挂在左侧留白里，
+   不占行高、不压字 */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	position: relative;
+	line-height: 1.4;
+	text-wrap: balance;
 }
 
-h2::before {
-	content: "";
-	right: 3px;
-	display: block;
-	width: 8px;
-	height: 8px;
-	background-image: linear-gradient(var(--themecolor), transparent);
-	opacity: .65;
-	position: relative;
-	border-radius: 50%;
-	top: 30px;
+h1 {
+	font-size: 1.55rem
+}
+
+.h2,
+h2 {
+	font-size: 1.35rem
 }
 
 .h3,
 h3 {
-	font-size: 1.375rem;
-	line-height: 30px
+	font-size: 1.15rem
 }
 
-.comment-title,
 .h4,
 .h5,
 .h6,
 h4,
 h5,
 h6 {
+	font-size: 1rem
+}
+
+.comment-title {
 	font-size: 1.125rem;
 	line-height: 26px
 }
 
+h2::before,
 h3::before {
 	content: "";
-	right: 3px;
-	display: block;
-	width: 8px;
-	height: 8px;
-	background-image: linear-gradient(var(--themecolor), transparent);
-	opacity: .55;
-	position: relative;
+	position: absolute;
+	left: -.72em;
+	top: .51em;
+	width: .38em;
+	height: .38em;
 	border-radius: 50%;
-	top: 30px;
+	background-image: linear-gradient(var(--themecolor), transparent);
+	opacity: .65;
+	pointer-events: none;
+}
+
+h3::before {
+	opacity: .5;
 }
 
 #comments-list>h1.comment-title::before {
@@ -463,21 +476,18 @@ small {
 	}
 
 	.h1,
-	.post-title,
-	h1 {
+	.post-title {
 		font-size: 2rem;
 		line-height: 48px
 	}
 
-	.h2,
-	h2 {
-		line-height: 40px
+	h1 {
+		font-size: 1.7rem
 	}
 
-	h2::before {
-		width: 10px;
-		height: 10px;
-		top: 35px;
+	.h2,
+	h2 {
+		font-size: 1.45rem
 	}
 
 	#comments-list>h1.comment-title::before {
@@ -488,17 +498,15 @@ small {
 
 	.h3,
 	h3 {
-		line-height: 36px
+		font-size: 1.2rem
 	}
 
-	h3::before {
-		width: 9px;
-		height: 9px;
-	}
-
-	.comment-title,
 	.h4,
 	h4 {
+		font-size: 1.05rem
+	}
+
+	.comment-title {
 		font-size: 1.375rem;
 		line-height: 34px
 	}
@@ -509,33 +517,15 @@ small {
 @media screen and (min-width:1183px) {
 
 	.h1,
-	.post-title,
-	h1 {
+	.post-title {
 		font-size: 2.215rem;
 		line-height: 56px
-	}
-
-	.h2,
-	h2 {
-		line-height: 44px
-	}
-
-	h2::before {
-		width: 12px;
-		height: 12px;
-		top: 40px;
 	}
 
 	#comments-list>h1.comment-title::before {
 		width: 12px;
 		height: 12px;
 		top: 40px;
-	}
-
-	h3::before {
-		width: 10px;
-		height: 10px;
-		top: 34px
 	}
 
 }
@@ -647,6 +637,42 @@ ul,
 	margin-right: 1px
 }
 
+/* 正文节奏：标题离上文远、离下文近，让标题归属于它引出的段落 */
+.post-content :is(h1, h2, h3, h4, h5, h6) {
+	margin: 1.9em 0 .6em;
+}
+
+.post-content h1 {
+	margin-top: 2.1em;
+}
+
+.post-content :is(h3, h4, h5, h6) {
+	margin-top: 1.6em;
+	margin-bottom: .5em;
+}
+
+.post-content > :is(h1, h2, h3, h4, h5, h6):first-child,
+.post-content > .pagefind-meta + :is(h1, h2, h3, h4, h5, h6),
+.post-content hr + :is(h1, h2, h3, h4, h5, h6) {
+	margin-top: 0;
+}
+
+.post-content :is(p, li) {
+	text-wrap: pretty;
+}
+
+/* KaTeX 默认放大到 1.21em，与正文并排时偏大；长的行间公式在窄屏横向滚动 */
+.post-content .katex {
+	font-size: 1.1em;
+}
+
+.post-content .katex-display {
+	margin: 1.1em 0;
+	padding: .2em 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
 /* Scope reading typography to content; navigation and widget lists keep their
    own spacing. Preserve the existing alphabetic and Roman ordered nesting. */
 .post-body .post-content ol,
@@ -672,7 +698,6 @@ ul,
 .cp li {
 	display: list-item;
 	margin: .38em 0;
-	line-height: 1.85;
 }
 
 .post-body .post-content li p,
@@ -1405,46 +1430,44 @@ a:hover {
 	color: var(--themehovercolor);
 }
 
+/* Links flow and wrap like text. In prose they carry a hairline brass
+   underline that darkens on hover; only links leaving the site get an arrow. */
 .inner-post-wrapper a:not(.friendsboard-list a):not(.meta.post-meta a):not(.cloud-container a) {
-	border-radius: 0.35rem;
-	position: relative;
-	display: inline-block;
-	overflow-wrap: break-word;
-	text-decoration: none;
-	max-width: 100%;
 	color: var(--themecolor);
+	overflow-wrap: anywhere;
+	transition: color var(--motion-color) var(--motion-ease), text-decoration-color var(--motion-color) var(--motion-ease);
 }
 
-.inner-post-wrapper a:not(.friendsboard-list a):not(.meta.post-meta a):not(.cloud-container a)::before {
+.post-content a:not(.friendsboard-list a) {
+	text-decoration: underline;
+	text-decoration-color: color-mix(in srgb, var(--themecolor) 40%, transparent);
+	text-decoration-thickness: 1px;
+	text-underline-offset: .22em;
+	text-decoration-skip-ink: auto;
+}
+
+.post-content a:not(.friendsboard-list a):hover {
+	text-decoration-color: currentColor;
+}
+
+.inner-post-wrapper a:not(.friendsboard-list a):not(.meta.post-meta a):not(.cloud-container a):focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--themecolor) 60%, transparent);
+	outline-offset: 2px;
+	border-radius: .2em;
+}
+
+/* An empty inline box (not inline-block) so line breaking still sees the
+   surrounding text: a closing "，" after the link never wraps to a new line. */
+.post-content a[href^="http"]:not(.friendsboard-list a)::after {
 	content: '';
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-color: var(--themecolor);
-	border-radius: 0.4rem;
-	transform: scale(0.8);
-	transition: transform var(--motion-feedback) var(--motion-ease), opacity var(--motion-feedback) var(--motion-ease);
-	opacity: 0;
+	padding-left: .68em;
+	background-color: currentColor;
+	mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5 7.5 2.5M3.5 2.5h4v4"/></svg>') no-repeat right .02em top .2em / .5em .5em;
+	opacity: .65;
 }
 
-.inner-post-wrapper a:not(.friendsboard-list a):not(.meta.post-meta a):not(.cloud-container a):hover::before {
-	transform: scale(1.05, 0.88);
-	opacity: 0.25;
-}
-
-.inner-post-wrapper a:not(.friendsboard-list a):not(.meta.post-meta a):not(.cloud-container a):active::before {
-	transform: scale(1.03, 0.8);
-	opacity: 0.4;
-}
-
-.inner-post-wrapper a:not(.friendsboard-list a):not(.meta.post-meta a):not(.cloud-container a)::after {
-	content: '\e81f';
-	font-family: fontello;
-	color: currentColor;
-	font-size: 0.8em;
-	margin-left: 5px;
+.post-content a[href^="http"]:has(> img)::after {
+	content: none;
 }
 
 blockquote {
@@ -1516,7 +1539,7 @@ h3,
 h4,
 h5,
 h6 {
-	font-family: "LXGW WenKai GB", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", SimSun, sans-serif;
+	font-family: var(--font-body);
 	font-weight: 400;
 	color: var(--text-color);
 }
@@ -1531,16 +1554,25 @@ h6 {
 	color: var(--heading-color);
 }
 
+/* 文楷只有常规体：加粗时拉丁字母用真半粗，汉字不做伪粗，
+   改由提亮的字色和黄铜荧光笔承担强调 */
 b,
 strong {
 	font-weight: 600;
+	font-synthesis-weight: none;
 	background-image: linear-gradient(to top,
-		color-mix(in srgb, var(--themecolor) 35%, transparent) 0%,
+		color-mix(in srgb, var(--themecolor) 30%, transparent) 0%,
 		transparent 100%
 	);
-	background-size: 100% 45%;
+	background-size: 100% 38%;
 	background-repeat: no-repeat;
-	background-position: 0 88%;
+	background-position: 0 92%;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
+}
+
+.post-content :is(p, li, td, th) > :is(b, strong) {
+	color: var(--heading-color);
 }
 
 .avatar,
@@ -1568,7 +1600,8 @@ strong {
 .meta {
 	color: var(--text3-color);
 	text-transform: uppercase;
-	letter-spacing: 2px
+	letter-spacing: .06em;
+	font-variant-numeric: tabular-nums;
 }
 
 .meta-item {

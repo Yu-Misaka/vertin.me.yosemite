@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { createMarkdownProcessor } from '@astrojs/markdown-remark';
 import { fromHtml } from 'hast-util-from-html';
 import { visit } from 'unist-util-visit';
@@ -69,6 +70,29 @@ Plain tab content.
   assert.doesNotMatch(html, /\[\/?(?:tabs|tab|timeline|timeline-event)\b/);
 });
 
+test('an italic opening line becomes the timeline subtitle while other emphasis stays inline', async () => {
+  const html = await render(`
+[timeline]
+[timeline-event date="2025" title="**Institution**"]
+
+*Role title*
+- Detail with *inline emphasis*.
+
+[/timeline-event]
+[timeline-event date="2024" title="**Other**"]
+
+Opens with *mixed* emphasis.
+
+[/timeline-event]
+[/timeline]
+`);
+  const subtitles = elements(html, hasClass('timeline-subtitle'));
+  assert.equal(subtitles.length, 1);
+  assert.equal(subtitles[0].children[0].tagName, 'em');
+  assert.match(html, /<li>Detail with <em>inline emphasis<\/em>\.<\/li>/);
+  assert.match(html, /<p>Opens with <em>mixed<\/em> emphasis\.<\/p>/);
+});
+
 test('adjacent friend cards compile into grids without dropping links', async () => {
   const html = await render(`
 ## First group
@@ -76,13 +100,19 @@ test('adjacent friend cards compile into grids without dropping links', async ()
 [friend-card name="Second friend" ico="/images/avatar.webp" url="https://example.org/second"]See the [guide](https://example.org/guide).[/friend-card]
 
 ## Second group
-[friend-card name="Third friend" ico="/images/avatar.webp" url="https://example.org/third"]Third description.[/friend-card]
+[friend-card name="Third friend" ico="/images/avatar.webp" url="https://www.example.org/third"][/friend-card]
 `);
-  assert.equal(elements(html, hasClass('friendsboard-item')).length, 3);
+  const cards = elements(html, hasClass('friendsboard-item'));
+  assert.equal(cards.length, 3);
   assert.equal(elements(html, hasClass('friendsboard-list')).length, 2);
   const links = elements(html, node => node.tagName === 'a').map(node => node.properties.href);
-  for (const path of ['first', 'second', 'third', 'guide']) assert.ok(links.includes(`https://example.org/${path}`));
+  for (const url of ['https://example.org/first', 'https://example.org/second', 'https://www.example.org/third', 'https://example.org/guide']) assert.ok(links.includes(url));
   assert.doesNotMatch(html, /\[friend-card /);
+  // Each card has one link of its own, named by the friend; the avatar is decorative.
+  assert.deepEqual(elements(html, hasClass('friends-card-name')).map(node => node.children[0].value), ['First friend', 'Second friend', 'Third friend']);
+  assert.ok(elements(html, hasClass('friends-card-avatar')).every(node => node.properties.alt === ''));
+  assert.deepEqual(elements(html, hasClass('friends-card-host')).map(node => node.children[0].value), ['example.org', 'example.org', 'example.org']);
+  assert.equal(elements(html, hasClass('friends-card-text')).length, 2, 'an empty description leaves no empty line');
 });
 
 test('formulas and shortcodes are rendered together before reaching the browser', async () => {
@@ -93,11 +123,20 @@ test('formulas and shortcodes are rendered together before reaching the browser'
   assert.doesNotMatch(html, /katex-error/);
 });
 
+test('formula markup and the bundled KaTeX stylesheet come from the same release', () => {
+  // KaTeX renames layout classes between minor versions; a split leaves subscripts and \neq unstyled.
+  const version = from => createRequire(from)('katex/package.json').version;
+  assert.equal(version(import.meta.resolve('rehype-katex')), version(import.meta.url));
+});
+
 test('literal shortcode examples in code are preserved and URLs link only outside code', async () => {
-  const html = await render('`[alert type="red"]literal[/alert]`\n\n```text\n[tabs][tab title="x"]literal[/tab][/tabs]\n```\n\nhttps://example.org/path。');
+  const html = await render('`[alert type="red"]literal[/alert]`\n\n```text\n[tabs][tab title="x"]literal[/tab][/tabs]\n```\n\nhttps://example.org/path。\n\n见https://example.org/archives/395的心路历程');
   assert.equal(elements(html, hasClass('alert-box')).length, 0);
   assert.equal(elements(html, hasClass('tab-container')).length, 0);
-  assert.equal(elements(html, node => node.tagName === 'a')[0].properties.href, 'https://example.org/path');
+  const links = elements(html, node => node.tagName === 'a');
+  assert.equal(links[0].properties.href, 'https://example.org/path');
+  assert.equal(links[1].properties.href, 'https://example.org/archives/395', 'Chinese prose is not part of a bare URL');
+  assert.match(html, /<\/a>的心路历程/);
   assert.match(html, /literal/);
 });
 

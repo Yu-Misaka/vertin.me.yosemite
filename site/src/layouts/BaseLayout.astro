@@ -7,6 +7,8 @@ import { getThemeTokens } from "../config/theme";
 import SpeedInsights  from "@vercel/speed-insights/astro";
 import Analytics from '@vercel/analytics/astro';
 import { ClientRouter } from "astro:transitions";
+import serifLatin from '@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2?url';
+import '../styles/fonts.css';
 import '../styles/theme.css';
 import '../styles/components.css';
 import '../styles/notifications.css';
@@ -56,6 +58,7 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
       })();
     </script>
     <link rel="stylesheet" href="/css/fontello.css" />
+    <link rel="preload" href={serifLatin} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.webp" type="image/webp" />
     <style is:inline id="twikoo-styles" data-astro-transition-persist="twikoo-styles"></style>
 

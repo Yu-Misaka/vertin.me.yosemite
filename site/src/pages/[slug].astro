@@ -17,7 +17,8 @@ const { Content, headings } = await render(page);
 const hasImg = Boolean(page.data.cover);
 
 // CV sections live in separate tabs, so a shared TOC would link to hidden content.
-const tocHtml = page.id === "curriculum-vitae" ? "" : buildTocHtml(headings);
+const isCv = page.id === "curriculum-vitae";
+const tocHtml = isCv ? "" : buildTocHtml(headings);
 ---
 <BaseLayout pageType="page" navCurrent={`/${page.id}`} title={page.data.title} tocHtml={tocHtml}>
   <div class="wrapper">
@@ -53,7 +54,8 @@ const tocHtml = page.id === "curriculum-vitae" ? "" : buildTocHtml(headings);
                 </a>
               </div>
 
-              <div class:list={["post-content", { "post-content--cv": page.id === "curriculum-vitae" }]} data-pagefind-body>
+              <!-- The CV is written in English: lang drives hyphenation and Latin typography. -->
+              <div class:list={["post-content", { "post-content--cv": isCv }]} lang={isCv ? "en" : undefined} data-pagefind-body>
                 <Content />
               </div>
             </div>

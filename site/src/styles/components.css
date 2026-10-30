@@ -149,8 +149,11 @@
     padding: 10px 20px;
     transition: transform var(--motion-feedback) var(--motion-ease), border-color var(--motion-color) var(--motion-ease);
     transform: scale(1);
-    font-weight: bold;
+    /* 文楷没有粗体，加粗只会被浏览器伪造成糊边；用中粗拉丁 + 色块承担强调 */
+    font-weight: 500;
     font-size: 0.95rem;
+    line-height: 1.7;
+    align-items: baseline;
 }
 
 .alert-box:hover {
@@ -347,223 +350,170 @@
 }
 
 /** 友链卡片 **/
+/* 友链是一面名牌墙：头像是展品，名字是展签，域名是落款。名字的链接铺满整张卡；
+   悬停只“亮灯”——描边染一点黄铜、暗色下头像回到原亮度，卡片不浮起。 */
 .friendsboard-list {
-    display: flex;
-    flex-flow: row wrap;
-    width: calc(100% + 16px);
-    margin-left: -16px;
-}
-
-@media (hover: hover) {
-
-    .friendsboard-list:hover .friendsboard-item:hover {
-        opacity: 1;
-        background-color:
-            color-mix(in srgb, var(--themecolor) 8%, var(--card-color));
-    }
-}
-
-.friendsboard-list,
-.friendsboard-list * {
-    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+    gap: 12px;
+    margin: 0 0 24px;
 }
 
 .friendsboard-item {
     position: relative;
-    display: block;
-
-    width: calc(33.3333% - 16px);
-    margin-left: 16px;
-    margin-bottom: 20px;
-
-    padding: 16px 18px 18px 18px;
-    border-radius: 0.6rem;
-
-    background-color: var(--card-color);
-    border: 1px solid var(--border-color);
-
-    color: inherit;
-    text-decoration: none;
-
-    user-select: none;
-
-    transition: background-color var(--motion-color) var(--motion-ease), border-color var(--motion-color) var(--motion-ease), transform var(--motion-feedback) var(--motion-ease), opacity var(--motion-feedback) var(--motion-ease);
-}
-
-.friendsboard-link {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    color: inherit;
-    text-decoration: none;
+    gap: 14px;
+    min-width: 0;
+    padding: 14px 16px;
+    border-radius: 0.6rem;
+    background-color: var(--card2-color);
+    border: 1px solid var(--line-color);
+    transition: background-color var(--motion-color) var(--motion-ease), border-color var(--motion-color) var(--motion-ease), transform var(--motion-press) var(--motion-ease);
 }
 
-.friendsboard-link::before,
-.friendsboard-link::after {
-    content: none !important;
+/* 有些友链头像本身不是圆形（透明底），所以不加底色和描边 */
+.friends-card-avatar {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: filter var(--motion-feedback) var(--motion-ease);
+}
+
+.friends-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 两个类名，压过正文的 .post-content a 链接色；名字宁可折行也不截断 */
+.friendsboard-item .friends-card-name {
+    display: block;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+    font-size: 1rem;
+    font-weight: 600;
+    font-synthesis-weight: none;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    color: var(--heading-color);
+    transition: color var(--motion-color) var(--motion-ease);
+}
+
+.friends-card-name::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 0.6rem;
+}
+
+.friends-card-name:focus-visible {
+    outline: none;
+}
+
+.friends-card-name:focus-visible::after {
+    outline: 2px solid var(--accent2-color);
+    outline-offset: 2px;
+}
+
+.friends-card-text {
+    margin-top: 1px;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--text2-color);
+}
+
+.friends-card-text p {
+    margin: 0;
+}
+
+/* 描述里的链接浮在整卡链接之上，仍可单独点击 */
+.friends-card-text a {
+    position: relative;
+    z-index: 1;
+    color: var(--themecolor);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--themecolor) 40%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: .2em;
+}
+
+.friends-card-text a:hover {
+    text-decoration-color: currentColor;
+}
+
+/* 落款：域名区分同名条目，箭头与正文外链一致 */
+.friends-card-host {
+    margin-top: 3px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    color: var(--text3-color);
+    transition: color var(--motion-color) var(--motion-ease);
+}
+
+.friends-card-host::after {
+    content: '';
+    display: inline-block;
+    width: .55em;
+    height: .55em;
+    margin-left: .35em;
+    background-color: currentColor;
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5 7.5 2.5M3.5 2.5h4v4"/></svg>') no-repeat center / contain;
+    opacity: .7;
+}
+
+.friendsboard-item:active {
+    transform: scale(0.985);
 }
 
 @media (hover: hover) {
     .friendsboard-item:hover {
-        background-color: var(--hover-color);
-        border-color: color-mix(in srgb,
-                var(--themehovercolor) 75%,
-                var(--border-color))
-    }
-}
-
-.friendsboard-item:active {
-    transform: scale(0.98);
-}
-
-.friends-card-header {
-    margin-bottom: 10px;
-}
-
-.friends-card-username {
-    position: relative;
-    padding-left: 18px;
-
-    font-size: 1rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    color: var(--text-color);
-
-    transition: color var(--motion-color) var(--motion-ease);
-}
-
-.friends-card-username::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.5em;
-
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-
-    border: 1.5px solid var(--line-color);
-    background-color: transparent;
-
-    transition: border-color var(--motion-color) var(--motion-ease), transform var(--motion-feedback) var(--motion-ease);
-}
-
-.friends-card-username::after {
-    content: '';
-    position: absolute;
-    left: 2px;
-    top: calc(0.5em + 2px);
-
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-
-    background-color: var(--themehovercolor);
-    opacity: 0;
-
-    transition: opacity var(--motion-feedback) var(--motion-ease);
-}
-
-@media (hover: hover) {
-    .friendsboard-item:hover .friends-card-username {
-        color: color-mix(in srgb,
-                var(--themehovercolor) 75%,
-                var(--text-color));
+        background-color: color-mix(in srgb, var(--themecolor) 6%, var(--card2-color));
+        border-color: color-mix(in srgb, var(--themecolor) 45%, var(--border-color));
     }
 
-    .friendsboard-item:hover .friends-card-username::before {
-        border-color: var(--themehovercolor);
-        transform: scale(1.15);
+    .friendsboard-item:hover .friends-card-name {
+        color: color-mix(in srgb, var(--themehovercolor) 75%, var(--heading-color));
     }
 
-    .friendsboard-item:hover .friends-card-username::after {
-        opacity: 0.85;
+    .friendsboard-item:hover .friends-card-host {
+        color: var(--themecolor);
     }
-}
 
-.friends-card-body {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.friends-card-text,
-.friends-card-text p {
-    margin: 0;
-
-    font-size: 0.85rem;
-    line-height: 1.65;
-    color: var(--text2-color);
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    transition: color var(--motion-color) var(--motion-ease);
-}
-
-.friends-card-avatar-container {
-    flex-shrink: 0;
-}
-
-.friends-card-avatar {
-    width: 56px;
-    height: 56px;
-
-    border-radius: 50%;
-    object-fit: cover;
-
-    /* 不是有问题，是我友链有些图片不是圆形的hhhh */
-    /*background-color: var(--pure-color);*/
-    /*border: 1px solid var(--line-color);*/
-
-    transition: border-color var(--motion-color) var(--motion-ease), box-shadow var(--motion-feedback) var(--motion-ease);
+    [data-theme="dark"] .friendsboard-item:hover .friends-card-avatar {
+        filter: none;
+    }
 }
 
 @media (hover: none) {
     .friendsboard-item:active {
-        background-color: var(--hover-color);
-        border-color: var(--themehovercolor);
+        background-color: color-mix(in srgb, var(--themecolor) 8%, var(--card2-color));
+        border-color: color-mix(in srgb, var(--themecolor) 55%, var(--border-color));
     }
 
-    .friendsboard-item:active .friends-card-username {
-        color: color-mix(in srgb,
-                var(--themehovercolor) 75%,
-                var(--text-color));
-    }
-
-    .friendsboard-item:active .friends-card-username::before {
-        border-color: var(--themehovercolor);
-        transform: scale(1.15);
-    }
-
-    .friendsboard-item:active .friends-card-username::after {
-        opacity: 0.85;
-    }
-
-    .friendsboard-item:active .friends-card-text,
-    .friendsboard-item:active .friends-card-text p {
-        color: color-mix(in srgb,
-                var(--themehovercolor) 45%,
-                var(--text2-color));
-    }
-
-    .friendsboard-item:active .friends-card-avatar {
-        border-color: var(--themehovercolor);
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--themehovercolor) 22%, transparent);
+    .friendsboard-item:active .friends-card-host {
+        color: var(--themecolor);
     }
 }
 
-@media screen and (max-width: 1300px) {
-    .friendsboard-item {
-        width: calc(50% - 16px);
+@media (max-width: 578.98px) {
+    .friendsboard-list {
+        gap: 10px;
     }
-}
 
-@media screen and (max-width: 450px) {
     .friendsboard-item {
-        width: calc(100% - 16px);
-        padding: 18px 18px 20px;
+        gap: 12px;
+        padding: 12px 14px;
+    }
+
+    .friends-card-avatar {
+        width: 44px;
+        height: 44px;
     }
 }
 
@@ -803,6 +753,78 @@
     color: var(--themehovercolor);
 }
 
+/* Timelines inside an article read as entries: the date is a quiet label,
+   the title leads, the italic role line sits right under it and the details
+   follow closely. Space separates entries, not lines within one entry. */
+.post-content .timeline-item {
+    padding: 22px 0;
+}
+
+.post-content .timeline-item::before {
+    top: 29px;
+}
+
+.post-content .timeline-dot {
+    top: 24px;
+}
+
+.post-content .timeline-date {
+    margin-bottom: 2px;
+    font-size: .8rem;
+    letter-spacing: .02em;
+    font-variant-numeric: tabular-nums lining-nums;
+    color: var(--text3-color);
+}
+
+.post-content .timeline-title {
+    font-size: 1.08rem;
+    line-height: 1.45;
+    color: var(--heading-color);
+}
+
+.post-content .timeline-title strong {
+    background: none;
+}
+
+.post-content .timeline-description {
+    margin-top: .3em;
+}
+
+.post-content .timeline-description > * {
+    margin: .55em 0 0;
+}
+
+.post-content .timeline-description > .timeline-subtitle {
+    margin-top: 0;
+    font-size: .95rem;
+    color: var(--text2-color);
+}
+
+.post-content .timeline-description > :is(ul, ol) {
+    margin: .5em 0 0;
+}
+
+.post-content .timeline-description > :last-child {
+    margin-bottom: 0;
+}
+
+.post-content .timeline-description li {
+    margin: .3em 0;
+}
+
+/* 简历是英文文档：西文行高与连字；只在窄屏为长词开启断词，宽屏保持整词 */
+.post-content--cv {
+    line-height: 1.6;
+    font-variant-ligatures: common-ligatures;
+}
+
+@media (max-width: 578.98px) {
+    .post-content--cv {
+        hyphens: auto;
+        hyphenate-limit-chars: 9 4 4;
+    }
+}
+
 @media (hover: none) {
     :is(#timeline, .timeline):hover .timeline-item {
         opacity: 1;
@@ -891,6 +913,9 @@
 }
 
 .tab-content {
+    /* Keep pane margins inside the measured height, including while the height
+       animation prevents them from collapsing through this container. */
+    display: flow-root;
     padding: 28px 0 0;
     background-color: var(--card-color);
 }
@@ -905,9 +930,41 @@
 
 .tab-pane.active > *:first-child { margin-top: 0; }
 
-/* Align plain CV panels with the timeline's original 40px + 24px inset. */
+/* Align plain CV panels with the timeline text (40px rail + 24px gutter). */
 .post-content--cv .tab-pane:not(:has(> .timeline)) {
     padding-left: 64px;
+}
+
+/* 窄屏收窄时间线的轨道与缩进，把宽度还给正文 */
+@media (max-width: 578.98px) {
+    .post-content :is(#timeline, .timeline) {
+        padding-left: 26px;
+    }
+
+    .post-content :is(#timeline, .timeline)::before {
+        left: 8px;
+    }
+
+    .post-content .timeline-dot {
+        left: -22.5px;
+    }
+
+    .post-content .timeline-item::before {
+        left: 0;
+        width: 18px;
+    }
+
+    .post-content .timeline-item:not(:last-child)::after {
+        left: 14px;
+    }
+
+    .post-content .timeline-content {
+        margin-left: 14px;
+    }
+
+    .post-content--cv .tab-pane:not(:has(> .timeline)) {
+        padding-left: 40px;
+    }
 }
 
 @media (max-width: 768px) {

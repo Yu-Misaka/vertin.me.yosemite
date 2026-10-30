@@ -36,29 +36,33 @@ date: 2026-10-28
 [/tab]
 [tab title="Selected Work"]
 
-### Formalization of Nilpotent Orbit Closures
+[timeline]
 
-*2025 – Present*
+[timeline-event date="2025 – Present" title="**Formalization of Nilpotent Orbit Closures**"]
 
 Co-authored a Lean 4 formalization of the combinatorial framework for nilpotent orbit closure relations in classical real Lie groups, following Đoković’s work.
 
 [Code: YoungDiagram](https://github.com/SamuelE0271194/YoungDiagram)
 
-### A Formal Proof of the Sticky-Kakeya Theorem
+[/timeline-event]
 
-*2026*
+[timeline-event date="2026" title="**A Formal Proof of the Sticky-Kakeya Theorem**"]
 
 Co-authored a Lean 4 formalization of Theorem 5.2 in Wang and Zahl’s work on sticky Kakeya sets, subsequently incorporated into a machine-checked proof of the full three-dimensional Kakeya conjecture. The formalization and its contributors were acknowledged in Guth, Wang, and Zahl’s streamlined proof.
 
 [Code: 3d-sticky-kakeya](https://github.com/M32026/3d-sticky-kakeya) · [Paper: arXiv:2601.14411](https://arxiv.org/abs/2601.14411)
 
-### EdgeBench
+[/timeline-event]
 
-*2026*
+[timeline-event date="2026" title="**EdgeBench**"]
 
 Co-authored *EdgeBench: Unveiling Scaling Laws of Learning from Real-World Environments*. Contributed Lean-based evaluation infrastructure for formal mathematics, including partial-credit scoring and checks for axiom dependencies, modified theorem statements, and tampered definitions.
 
 [Paper: arXiv:2607.05155](https://arxiv.org/abs/2607.05155)
+
+[/timeline-event]
+
+[/timeline]
 
 [/tab]
 [tab title="Research and Experience"]

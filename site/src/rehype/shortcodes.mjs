@@ -70,37 +70,37 @@ export function compileShortcodes(source) {
     );
   }
 
+  function hostname(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return '';
+    }
+  }
+
+  // The name is the card's only link; CSS stretches it over the whole card.
+  // The avatar repeats the name, so it is decorative. The host tells apart
+  // entries that share a name.
   function parseFriendCards(html) {
     return html.replace(
       /\[friend-card name="([^"]*)" ico="([^"]*)" url="([^"]*)"\]([\s\S]*?)\[\/friend-card\]/gi,
       function (_, name, ico, url, description) {
-        const body = stripLeadingBreaks(description);
+        const body = stripLeadingBreaks(description).trim();
+        const host = hostname(url);
         return (
           '<!--friendsboard-item-->' +
-          '<div class="friendsboard-item">' +
-          '<div class="friends-card-header">' +
-          '<a href="' +
-          url +
-          '" class="friendsboard-link friendsboard-link-header" target="_blank" rel="noopener noreferrer">' +
-          '<span class="friends-card-username">' +
-          name +
-          '</span>' +
-          '<span class="friends-card-dot"></span>' +
-          '</a>' +
-          '</div>' +
-          '<div class="friends-card-body">' +
-          '<div class="friends-card-text">' +
-          body +
-          '</div>' +
-          '<div class="friends-card-avatar-container">' +
-          '<a href="' +
-          url +
-          '" class="friendsboard-link friendsboard-link-avatar" target="_blank" rel="noopener noreferrer">' +
+          '<div class="friendsboard-item" role="listitem">' +
           '<img src="' +
           ico +
-          '" alt="Avatar" class="friends-card-avatar no-zoom no-figcaption" draggable="false">' +
+          '" alt="" class="friends-card-avatar no-zoom no-figcaption" draggable="false">' +
+          '<div class="friends-card-body">' +
+          '<a href="' +
+          url +
+          '" class="friendsboard-link friends-card-name" target="_blank" rel="noopener noreferrer">' +
+          name +
           '</a>' +
-          '</div>' +
+          (body ? '<div class="friends-card-text">' + body + '</div>' : '') +
+          (host ? '<div class="friends-card-host">' + host + '</div>' : '') +
           '</div>' +
           '</div>' +
           '<!--/friendsboard-item-->'
@@ -136,7 +136,9 @@ export function compileShortcodes(source) {
       const events = inner.replace(
         /\[timeline-event date="([^"]*)" title="([^"]*)"\]([\s\S]*?)\[\/timeline-event\]/gi,
         function (match, date, title, text) {
-          const body = trimEmptyParagraphs(stripLeadingBreaks(text));
+          // An opening paragraph that is entirely italic is the event's role line.
+          const body = trimEmptyParagraphs(stripLeadingBreaks(text))
+            .replace(/^((?:\s|<\/p>)*)<p>(<em>(?:(?!<\/?em\b|<\/p>)[\s\S])*<\/em>)<\/p>/i, '$1<p class="timeline-subtitle">$2</p>');
           return (
             '<div class="timeline-item">' +
             '<div class="timeline-dot"></div>' +
