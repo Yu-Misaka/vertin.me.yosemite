@@ -97,12 +97,11 @@ Co-authored *EdgeBench: Unveiling Scaling Laws of Learning from Real-World Envir
 [/timeline]
 
 [/tab]
-[tab title="Contact"]
-
-You can also reach me at [hi@vertin.me](mailto:hi@vertin.me) or use the form below.
-
-[/tab]
 
 [/tabs]
+
+## Contact
+
+You can reach me at [hi@vertin.me](mailto:hi@vertin.me) or use the form below.
 
 [friend-card name="Yu-Misaka" ico="/persistent-image/109365723.webp" url="https://github.com/Yu-Misaka"]GitHub[/friend-card] [friend-card name="Hilbert-Yu" ico="/persistent-image/210fd3b105f46675acb84497c6a6542900407f78.webp" url="https://space.bilibili.com/71108056"]BiliBili[/friend-card]

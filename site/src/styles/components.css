@@ -930,11 +930,6 @@
 
 .tab-pane.active > *:first-child { margin-top: 0; }
 
-/* Align plain CV panels with the timeline text (40px rail + 24px gutter). */
-.post-content--cv .tab-pane:not(:has(> .timeline)) {
-    padding-left: 64px;
-}
-
 /* 窄屏收窄时间线的轨道与缩进，把宽度还给正文 */
 @media (max-width: 578.98px) {
     .post-content :is(#timeline, .timeline) {
@@ -960,10 +955,6 @@
 
     .post-content .timeline-content {
         margin-left: 14px;
-    }
-
-    .post-content--cv .tab-pane:not(:has(> .timeline)) {
-        padding-left: 40px;
     }
 }
 
