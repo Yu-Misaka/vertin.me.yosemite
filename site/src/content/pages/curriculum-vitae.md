@@ -2,7 +2,7 @@
 title: "简历 Curriculum Vitae"
 order: 5
 cover: "/persistent-image/illust3.webp"
-date: 2026-10-28
+date: 2026-8-28
 ---
 
 [tabs]
@@ -11,7 +11,7 @@ date: 2026-10-28
 
 [timeline]
 
-[timeline-event date="Aug 2025 – Aug 2026" title="**National University of Singapore, Singapore**"]
+[timeline-event date="Aug 2025 – Present" title="**National University of Singapore, Singapore**"]
 
 *Master of Science in Mathematics*
 - Selected coursework: Mathematical Logic, Commutative and Homological Algebra, Representation Theory.
@@ -73,8 +73,8 @@ Co-authored *EdgeBench: Unveiling Scaling Laws of Learning from Real-World Envir
 
 *Intern, Formal Mathematics and Forward-Deployed Engineering*
 - Contributed Lean/mathlib formalizations on spectral bounds, symplectic matrices, and character theory.
-- Completed a formalization of the large sieve and the classical Bombieri–Vinogradov theorem; code is pending company approval for public release.
-- Developing long-horizon evaluation benchmarks with the Seed-Edge team.
+- Completed a formalization of the large sieve and the classical Bombieri–Vinogradov theorem.
+- Developing long-horizon evaluation benchmarks.
 
 [/timeline-event]
 
