@@ -53,7 +53,7 @@ function decorate(parent, inFigure = false, inLink = false) {
   for (const node of next) {
     if (classes(node).includes('friendsboard-item')) {
       if (!group) {
-        group = element('div', { className: ['friendsboard-list'] });
+        group = element('div', { className: ['friendsboard-list'], role: 'list' });
         parent.children.push(group);
       }
       group.children.push(node);

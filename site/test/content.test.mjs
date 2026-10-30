@@ -100,13 +100,19 @@ test('adjacent friend cards compile into grids without dropping links', async ()
 [friend-card name="Second friend" ico="/images/avatar.webp" url="https://example.org/second"]See the [guide](https://example.org/guide).[/friend-card]
 
 ## Second group
-[friend-card name="Third friend" ico="/images/avatar.webp" url="https://example.org/third"]Third description.[/friend-card]
+[friend-card name="Third friend" ico="/images/avatar.webp" url="https://www.example.org/third"][/friend-card]
 `);
-  assert.equal(elements(html, hasClass('friendsboard-item')).length, 3);
+  const cards = elements(html, hasClass('friendsboard-item'));
+  assert.equal(cards.length, 3);
   assert.equal(elements(html, hasClass('friendsboard-list')).length, 2);
   const links = elements(html, node => node.tagName === 'a').map(node => node.properties.href);
-  for (const path of ['first', 'second', 'third', 'guide']) assert.ok(links.includes(`https://example.org/${path}`));
+  for (const url of ['https://example.org/first', 'https://example.org/second', 'https://www.example.org/third', 'https://example.org/guide']) assert.ok(links.includes(url));
   assert.doesNotMatch(html, /\[friend-card /);
+  // Each card has one link of its own, named by the friend; the avatar is decorative.
+  assert.deepEqual(elements(html, hasClass('friends-card-name')).map(node => node.children[0].value), ['First friend', 'Second friend', 'Third friend']);
+  assert.ok(elements(html, hasClass('friends-card-avatar')).every(node => node.properties.alt === ''));
+  assert.deepEqual(elements(html, hasClass('friends-card-host')).map(node => node.children[0].value), ['example.org', 'example.org', 'example.org']);
+  assert.equal(elements(html, hasClass('friends-card-text')).length, 2, 'an empty description leaves no empty line');
 });
 
 test('formulas and shortcodes are rendered together before reaching the browser', async () => {
