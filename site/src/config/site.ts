@@ -35,7 +35,7 @@ export const site = {
   archivesCover: "/persistent-image/image1_waifu2x_2560x1440_3n.webp",
   comments: {
     provider: "twikoo",
-    envId: "https://twikoo-steel-beta.vercel.app/"
+    envId: "https://comment.vertin.me/"
   },
   aplayer: {
     enabled: true,
