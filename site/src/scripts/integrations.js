@@ -14,9 +14,8 @@ export function onIdle(callback, signal, timeout = 1500) {
 function loadTwikoo() {
   if (window.twikoo) return Promise.resolve(window.twikoo);
   if (twikooPromise) return twikooPromise;
-  // This legacy UMD bundle contains precompiled Vue render functions. Serve it
-  // unchanged as a hashed local asset; running it through an ESM bundler breaks
-  // its component interop. It is still loaded only once, near the comment UI.
+  // Serve the vendor UMD bundle unchanged as a hashed local asset, loaded only
+  // once near the comment UI, with its injected styles preserved on navigation.
   twikooPromise = new Promise((resolve, reject) => {
     const existingStyles = new Set(document.head.querySelectorAll('style'));
     const script = document.createElement('script');
@@ -96,9 +95,9 @@ export function initComments(root, signal) {
   let loading = false;
   let initialized = false;
   const destroy = () => {
-    // Twikoo 1.6 mounts a Vue 2 root inside our disposable container.
+    // Twikoo 2 mounts a Vue 3 app on our disposable mount element.
     // Destroy it before Astro detaches the document to release its listeners.
-    container.firstElementChild?.__vue__?.$destroy();
+    container.firstElementChild?.__vue_app__?.unmount();
   };
   const load = async () => {
     if (loading || initialized || signal.aborted) return;
@@ -110,7 +109,9 @@ export function initComments(root, signal) {
       const mount = document.createElement('div');
       mount.id = `twikoo-page-${++commentId}`;
       container.replaceChildren(mount);
-      await api.init({ envId, el: `#${mount.id}`, path });
+      // Match this Chinese site and use the bundled locale. Other 2.x locales
+      // require separate files that are not part of our hashed UMD asset.
+      await api.init({ envId, el: `#${mount.id}`, path, lang: 'zh-CN' });
       if (signal.aborted) { destroy(); return; }
       if (!container.querySelector('.twikoo')) throw new Error('评论组件未能挂载');
       initialized = true;
