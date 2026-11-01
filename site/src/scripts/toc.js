@@ -4,9 +4,7 @@ export function initToc(root, signal) {
   const links = [...section.querySelectorAll('.toc-a')];
   const headings = links.map(link => document.getElementById(decodeURIComponent(link.hash.slice(1))));
   const marker = section.querySelector('.siderbar');
-  const sidebar = section.closest('.right-sidebar');
   let positions = [];
-  let threshold = 0;
   let frame = 0;
   let measureFrame = 0;
   let active = -1;
@@ -35,7 +33,6 @@ export function initToc(root, signal) {
         markerTop = top;
       }
     }
-    section.classList.toggle('sticky', scrollY > threshold);
   };
   const scheduleUpdate = () => {
     if (!frame) frame = requestAnimationFrame(update);
@@ -45,15 +42,10 @@ export function initToc(root, signal) {
     measureFrame = requestAnimationFrame(() => {
       measureFrame = 0;
       positions = headings.map(heading => heading ? heading.getBoundingClientRect().top + scrollY : Infinity);
-      // Measure siblings, independent of whether the TOC is currently fixed.
-      threshold = [...sidebar.children].filter(child => child !== section)
-        .reduce((sum, child) => sum + child.offsetHeight + parseFloat(getComputedStyle(child).marginBottom || 0), 0) + 30;
       active = -1;
       scheduleUpdate();
     });
   };
-  // Keep the sidebar's flow anchored to the article rather than to the viewport.
-  sidebar.classList.add('has-toc');
   addEventListener('scroll', scheduleUpdate, { passive: true, signal });
   addEventListener('resize', measure, { passive: true, signal });
   root.addEventListener('load', measure, { capture: true, signal });

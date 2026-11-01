@@ -816,6 +816,8 @@ body {
 }
 
 body>.wrapper {
+	/* Include the floated page columns in the sticky sidebar's containing block. */
+	display: flow-root;
 	max-width: 339px;
 	padding-right: 8px;
 	padding-left: 8px;

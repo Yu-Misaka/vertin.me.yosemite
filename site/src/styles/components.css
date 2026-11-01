@@ -1096,16 +1096,15 @@
 
 /** TOC 目录**/
 .toc-section {
-    overflow: hidden;
+    /* Keep the same box and spacing before and after reaching the top inset. */
+    position: sticky;
+    top: 35px;
+    padding-bottom: 50px;
+    margin-bottom: 0;
+    max-height: calc(100dvh - 35px);
+    overflow-y: auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
-}
-
-.toc-section.sticky {
-    position: fixed;
-    padding: 35px 0 50px;
-    width: var(--toc-width, 244px);
-    top: 0;
     z-index: 100;
 }
 
@@ -1274,7 +1273,6 @@
     .right-sidebar {
         display: inline;
         width: 299px;
-        --toc-width: 234px;
     }
 
     .search-input {
@@ -1293,7 +1291,6 @@
 
     .right-sidebar {
         width: 344px;
-        --toc-width: 244px;
         padding: 40px 50px 50px 50px;
     }
 }
@@ -1329,9 +1326,14 @@
 .post-media { aspect-ratio: 1.9; max-height: 350px; }
 .post-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .post-content img[width][height] { height: auto; }
-.right-sidebar.has-toc { position: absolute; }
+/* Stretch to the page height; clipping here would trap sticky positioning. */
+.right-sidebar.has-toc {
+    position: absolute;
+    bottom: 0;
+    padding-bottom: 0;
+    overflow: visible;
+}
 .right-sidebar.has-toc .cloud-section, .right-sidebar.has-toc .search-section { display: block; }
-.right-sidebar.has-toc .toc-section.sticky { max-height: 100dvh; overflow-y: auto; }
 .siderbar { transition: transform var(--motion-feedback) var(--motion-ease); }
 .tab-link { font: inherit; border: 0; background: none; color: inherit; }
 [hidden] { display: none !important; }
