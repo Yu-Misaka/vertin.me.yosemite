@@ -18,8 +18,10 @@ const { Content, headings } = await render(page);
 const hasImg = Boolean(page.data.cover);
 const gallery = page.data.gallery ?? [];
 // The anchors page is a gallery: its cover opens the room and each exhibit
-// carries its own track.
-const isAnchors = page.id === "anchors" && gallery.length > 0;
+// carries its own track. The room begins at the cover, so the first exhibit
+// has to be the cover itself, and a room needs somewhere to walk.
+const isAnchors =
+  page.id === "anchors" && gallery.length > 1 && gallery[0]?.image === page.data.cover;
 
 // CV sections live in separate tabs, so a shared TOC would link to hidden content.
 const isCv = page.id === "curriculum-vitae";

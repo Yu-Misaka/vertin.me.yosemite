@@ -1,6 +1,16 @@
 import { holdSitePlayer } from './integrations.js';
-
-const pad = value => String(value).padStart(2, '0');
+import {
+  boundsForPose,
+  centrePose,
+  clampCamera,
+  fitScale,
+  litWork,
+  poseForRect,
+  projectRect,
+  tweenPose,
+  visibleFraction,
+  zoomAt
+} from './anchors-camera.mjs';
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
@@ -8,10 +18,14 @@ function formatTime(seconds) {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-// The anchors page turns its cover into the entrance of a small listening room.
-// The cover is not moved into a modal: the room darkens around the exact rect
-// the cover already occupies, then the label, player and wall emerge from the
-// dark. Each exhibit owns one image and one track.
+// The anchors page turns its cover into the entrance of a dark room.
+//
+// The cover does not move into a modal: it is already the first work. The room
+// waits in the dark around it, and the visitor's camera is what moves. Works
+// keep their world rects for the whole visit, so choosing one walks the camera
+// to it instead of swapping the picture in a single slot. Each work owns one
+// track, and the audio behaves like a guide you carry: it keeps playing while
+// you wander.
 export function initAnchorsGallery(root, signal) {
   const overlay = root.querySelector('[data-anchors-gallery]');
   const trigger = root.querySelector('[data-anchors-open]');
@@ -21,18 +35,9 @@ export function initAnchorsGallery(root, signal) {
   // fixed descendants. Portal the room to <body> so fixed means viewport.
   if (overlay.parentElement !== document.body) document.body.append(overlay);
 
-  let exhibits = [];
-  try {
-    exhibits = JSON.parse(overlay.querySelector('[data-gallery-data]')?.textContent || '[]');
-  } catch {
-    exhibits = [];
-  }
-  if (!exhibits.length) return;
-
-  const mainLayer = overlay.querySelector('[data-gallery-main]');
-  const nextLayer = overlay.querySelector('[data-gallery-next]');
-  const info = overlay.querySelector('[data-gallery-info]');
-  const countEl = overlay.querySelector('[data-gallery-count]');
+  const viewportEl = overlay.querySelector('[data-gallery-viewport]');
+  const worldEl = overlay.querySelector('[data-gallery-world]');
+  const placard = overlay.querySelector('[data-gallery-placard]');
   const titleEl = overlay.querySelector('[data-gallery-title]');
   const noteEl = overlay.querySelector('[data-gallery-note]');
   const trackEl = overlay.querySelector('[data-gallery-track]');
@@ -42,73 +47,197 @@ export function initAnchorsGallery(root, signal) {
   const durationEl = overlay.querySelector('[data-gallery-duration]');
   const progressEl = overlay.querySelector('[data-gallery-progress]');
   const closeBtn = overlay.querySelector('[data-gallery-close]');
-  const thumbs = [...overlay.querySelectorAll('[data-gallery-thumb]')];
+  const hintEl = overlay.querySelector('[data-gallery-hint]');
+  const statusEl = overlay.querySelector('[data-gallery-status]');
+  const indexButtons = [...overlay.querySelectorAll('[data-gallery-index]')];
+  const works = [...overlay.querySelectorAll('[data-gallery-work]')];
   const audio = overlay.querySelector('[data-gallery-audio]');
 
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const itemAt = index => exhibits[index] ?? exhibits[0];
-  const pagePath = location.pathname + location.search;
-  const shell = document.querySelector('body > .wrapper');
+  let data = {};
+  try {
+    data = JSON.parse(overlay.querySelector('[data-gallery-data]')?.textContent || '{}');
+  } catch {
+    data = {};
+  }
+  const items = data.works || [];
+  const content = data.content;
+  if (!items.length || !content || works.length !== items.length) return;
+  const rects = items.map(item => item.rect);
 
-  let active = 0;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const shell = document.querySelector('body > .wrapper');
+  const pagePath = location.pathname + location.search;
+
   let open = false;
+  let entryDone = false;
+  let active = 0;
+  let lit = -1;
+  let viewport = { width: window.innerWidth, height: window.innerHeight };
+  let viewScale = 1;
+  let camera = { x: 0, y: 0, scale: 1 };
+  let targetScale = 1;
+  let bounds = content;
+  let minScale = 0.1;
+  let maxScale = 1;
+  let zoomAnchor = { x: 0, y: 0 };
+  let tween = null;
+  let inertia = null;
+  let frame = 0;
+  let placardSize = { w: 260, h: 180 };
+  let placardVisible = false;
+  let fadeToken = 0;
   let closingViaHistory = false;
-  let frontLayer = mainLayer;
-  let backLayer = nextLayer;
   let savedFocus = null;
-  let releasePlayer = () => {};
   let previousHtmlOverflow = '';
   let previousBodyOverflow = '';
   let shellWasInert = false;
-  let fadeToken = 0;
-  let switchToken = 0;
-  let switching = false;
+  let releasePlayer = () => {};
+  let pointer = null;
+  let pinch = null;
+  let velocity = { x: 0, y: 0 };
+  const pointers = new Map();
+  const timers = [];
 
-  function resetArt(item) {
-    frontLayer = mainLayer;
-    backLayer = nextLayer;
-    frontLayer.src = item.image;
-    frontLayer.alt = item.title;
-    frontLayer.width = item.width;
-    frontLayer.height = item.height;
-    frontLayer.style.opacity = '1';
-    frontLayer.setAttribute('data-gallery-main', '');
-    frontLayer.removeAttribute('aria-hidden');
-    backLayer.removeAttribute('data-gallery-main');
-    backLayer.setAttribute('aria-hidden', 'true');
-    backLayer.alt = '';
-    backLayer.style.opacity = '0';
+  function later(fn, delay) {
+    const id = setTimeout(fn, delay);
+    timers.push(id);
+    return id;
   }
 
-  function renderMeta() {
-    const item = itemAt(active);
-    countEl.textContent = `${pad(active + 1)} / ${pad(exhibits.length)}`;
+  function clearTimers() {
+    timers.forEach(clearTimeout);
+    timers.length = 0;
+  }
+
+  function clampScale(scale) {
+    return Math.min(maxScale, Math.max(minScale, scale));
+  }
+
+  function measure() {
+    viewport = { width: window.innerWidth, height: window.innerHeight };
+    const frame = trigger.getBoundingClientRect();
+    // The cover's own width sets the viewing distance: it is the distance the
+    // page already put the visitor at.
+    viewScale = frame.width > 0 ? frame.width / rects[0].w : 0.5;
+    const fit = fitScale(content, viewport, 0.06);
+    minScale = Math.max(Math.min(fit, viewScale * 0.9), viewScale * 0.4);
+    maxScale = viewScale * 1.4;
+    targetScale = clampScale(targetScale);
+    if (open) camera.scale = clampScale(camera.scale);
+    return frame;
+  }
+
+  function apply() {
+    const scale = camera.scale;
+    worldEl.style.transform =
+      `translate3d(${(viewport.width / 2 - camera.x * scale).toFixed(2)}px, ${(viewport.height / 2 - camera.y * scale).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`;
+    if (!open) return;
+    lightNearest();
+    placePlacard();
+  }
+
+  function lightNearest() {
+    const next = litWork(camera, viewport, rects);
+    if (next === lit) return;
+    lit = next;
+    works.forEach((work, index) => {
+      if (index === next) work.setAttribute('data-lit', '');
+      else work.removeAttribute('data-lit');
+    });
+  }
+
+  function placePlacard() {
+    const rect = projectRect(camera, viewport, rects[active]);
+    const visible = entryDone && visibleFraction(camera, viewport, rects[active]) > 0.32;
+    if (visible !== placardVisible) {
+      placardVisible = visible;
+      placard.toggleAttribute('data-visible', visible);
+    }
+
+    const { w, h } = placardSize;
+    const gap = 30;
+    const safe = 18;
+    const options = [
+      { x: rect.x + rect.w + gap, y: rect.y + rect.h - h },
+      { x: rect.x - gap - w, y: rect.y + rect.h - h },
+      { x: rect.x, y: rect.y + rect.h + gap },
+      { x: rect.x, y: rect.y - gap - h }
+    ];
+    const fits = box =>
+      box.x >= safe && box.y >= safe &&
+      box.x + w <= viewport.width - safe && box.y + h <= viewport.height - safe;
+    const chosen = options.find(fits) || {
+      x: Math.min(viewport.width - safe - w, Math.max(safe, rect.x)),
+      y: Math.min(viewport.height - safe - h, Math.max(safe, rect.y + rect.h + gap))
+    };
+    placard.style.transform = `translate3d(${Math.round(chosen.x)}px, ${Math.round(chosen.y)}px, 0)`;
+  }
+
+  function schedule() {
+    if (!frame) frame = requestAnimationFrame(tick);
+  }
+
+  function tick() {
+    frame = 0;
+    const now = performance.now();
+    let busy = false;
+
+    if (tween) {
+      const progress = tween.duration > 0 ? (now - tween.start) / tween.duration : 1;
+      camera = tweenPose(tween.from, tween.to, progress);
+      if (progress >= 1) tween = null;
+      else busy = true;
+    } else if (Math.abs(camera.scale - targetScale) > 0.0005) {
+      // Ease the scale so a wheel notch glides instead of snapping.
+      const next = reducedMotion.matches
+        ? targetScale
+        : camera.scale + (targetScale - camera.scale) * 0.22;
+      camera = zoomAt(camera, viewport, zoomAnchor, next);
+      busy = true;
+    }
+
+    if (inertia) {
+      const dt = Math.min(64, now - inertia.time) / 1000;
+      inertia.time = now;
+      camera.x -= (inertia.x * dt) / camera.scale;
+      camera.y -= (inertia.y * dt) / camera.scale;
+      const decay = Math.exp(-dt * 5.2);
+      inertia.x *= decay;
+      inertia.y *= decay;
+      if (Math.hypot(inertia.x, inertia.y) < 30) inertia = null;
+      else busy = true;
+    }
+
+    camera = clampCamera(camera, viewport, bounds);
+    apply();
+    if (busy) schedule();
+  }
+
+  function cancelMotion() {
+    tween = null;
+    inertia = null;
+    targetScale = camera.scale;
+  }
+
+  function renderIndex() {
+    indexButtons.forEach((button, index) => {
+      if (index === active) button.setAttribute('aria-current', 'true');
+      else button.removeAttribute('aria-current');
+    });
+  }
+
+  function renderPlacard() {
+    const item = items[active];
     titleEl.textContent = item.title;
     noteEl.textContent = item.note || '';
-    noteEl.hidden = !item.note;
     trackEl.textContent = item.track;
+    placardSize = { w: placard.offsetWidth, h: placard.offsetHeight };
   }
 
-  function renderThumbs() {
-    const others = exhibits
-      .map((item, index) => ({ item, index }))
-      .filter(entry => entry.index !== active);
-    thumbs.forEach((button, slot) => {
-      const entry = others[slot];
-      if (!entry) {
-        button.hidden = true;
-        return;
-      }
-      button.hidden = false;
-      button.dataset.index = String(entry.index);
-      button.setAttribute('aria-label', `查看《${entry.item.title}》`);
-      const img = button.querySelector('[data-thumb-image]');
-      if (img.getAttribute('src') !== entry.item.image) img.src = entry.item.image;
-      img.width = entry.item.width;
-      img.height = entry.item.height;
-      button.querySelector('[data-thumb-index]').textContent = pad(entry.index + 1);
-      button.querySelector('[data-thumb-title]').textContent = entry.item.title;
-    });
+  function announce() {
+    const item = items[active];
+    statusEl.textContent =
+      `第 ${active + 1} 件，共 ${items.length} 件：《${item.title}》。正在播放：${item.track}`;
   }
 
   function updatePlaying(playing) {
@@ -133,86 +262,78 @@ export function initAnchorsGallery(root, signal) {
     const step = now => {
       if (token !== fadeToken) return;
       const progress = duration <= 0 ? 1 : Math.min(1, (now - start) / duration);
-      audio.volume = from + (target - from) * progress;
+      audio.volume = Math.min(1, Math.max(0, from + (target - from) * progress));
       if (progress < 1) requestAnimationFrame(step);
       else done?.();
     };
     requestAnimationFrame(step);
   }
 
-  function loadTrack({ play = true } = {}) {
-    const item = itemAt(active);
-    const token = ++fadeToken;
-    const begin = () => {
-      if (token !== fadeToken) return;
-      audio.pause();
-      audio.src = item.audio;
-      audio.volume = 0;
-      resetProgress();
-      audio.load();
-      if (!play) {
-        updatePlaying(false);
-        return;
-      }
-      const attempt = audio.play();
-      if (attempt?.then) {
-        attempt.then(() => {
-          if (!open || token !== fadeToken) return;
-          fadeAudio(1, 900, undefined, token);
-          updatePlaying(true);
-        }).catch(() => updatePlaying(false));
-      } else {
+  function playTrack(token, fadeIn) {
+    const attempt = audio.play();
+    if (attempt?.then) {
+      attempt.then(() => {
+        if (!open || token !== fadeToken) return;
+        audio.volume = 0;
+        fadeAudio(1, fadeIn, undefined, token);
         updatePlaying(true);
-      }
-    };
-    // Let the previous track leave before the new one arrives.
-    if (!audio.paused && audio.volume > 0) fadeAudio(0, 260, begin, token);
-    else begin();
-  }
-
-  function switchTo(index) {
-    if (index === active || switching || !exhibits[index]) return;
-    switching = true;
-    const token = ++switchToken;
-    active = index;
-    renderThumbs();
-    renderMeta();
-    loadTrack({ play: true });
-
-    const item = itemAt(active);
-    backLayer.src = item.image;
-    backLayer.alt = item.title;
-    backLayer.style.opacity = '0';
-    const reveal = () => {
-      if (token !== switchToken) return;
-      backLayer.style.opacity = '1';
-      frontLayer.style.opacity = '0';
-      setTimeout(() => {
-        if (token !== switchToken) return;
-        frontLayer.removeAttribute('data-gallery-main');
-        frontLayer.setAttribute('aria-hidden', 'true');
-        frontLayer.alt = '';
-        backLayer.setAttribute('data-gallery-main', '');
-        backLayer.removeAttribute('aria-hidden');
-        [frontLayer, backLayer] = [backLayer, frontLayer];
-        backLayer.style.opacity = '0';
-        switching = false;
-      }, 400);
-    };
-    const settle = () => requestAnimationFrame(() => requestAnimationFrame(reveal));
-    if (backLayer.complete) settle();
-    else {
-      backLayer.addEventListener('load', settle, { once: true });
-      backLayer.addEventListener('error', settle, { once: true });
+      }).catch(() => updatePlaying(false));
+    } else {
+      updatePlaying(true);
     }
   }
 
-  function openGallery() {
+  // The track belongs to the work, but the sound follows the visitor: walking
+  // away never stops it, only choosing another work does.
+  function setTrack({ fadeIn = 700 } = {}) {
+    const token = ++fadeToken;
+    const begin = () => {
+      if (token !== fadeToken || !open) return;
+      audio.src = items[active].audio;
+      audio.volume = 0;
+      resetProgress();
+      audio.load();
+      playTrack(token, fadeIn);
+    };
+    if (!audio.paused && audio.volume > 0.02) fadeAudio(0, 420, begin, token);
+    else begin();
+  }
+
+  function centerTo(index, { focus = false } = {}) {
+    if (!open || !rects[index]) return;
+    const changed = index !== active;
+    active = index;
+    renderPlacard();
+    renderIndex();
+    if (changed) {
+      setTrack();
+      announce();
+    }
+
+    const lift = Math.min(64, Math.max(18, viewport.height * 0.05));
+    const pose = centrePose(rects[index], viewScale, lift);
+    const target = clampCamera(pose, viewport, bounds);
+    zoomAnchor = { x: viewport.width / 2, y: viewport.height / 2 };
+    targetScale = pose.scale;
+    if (focus) works[index].focus({ preventScroll: true });
+
+    if (reducedMotion.matches) {
+      cancelMotion();
+      camera = target;
+      apply();
+      return;
+    }
+    tween = { from: { ...camera }, to: target, start: performance.now(), duration: 820 };
+    schedule();
+  }
+
+  function openRoom() {
     if (open) return;
     open = true;
+    entryDone = false;
+    placardVisible = false;
     active = 0;
-    switchToken += 1;
-    switching = false;
+    lit = -1;
     savedFocus = trigger;
     previousHtmlOverflow = document.documentElement.style.overflow;
     previousBodyOverflow = document.body.style.overflow;
@@ -224,81 +345,102 @@ export function initAnchorsGallery(root, signal) {
       shell.inert = true;
     }
 
-    // The artwork's box is the cover's hovered image; its visible window starts
-    // clipped to the frame. Expanding the window past the old border is the
-    // "frame dissolving" moment, so the hovered zoom is never lost.
-    const cover = trigger.getBoundingClientRect();
-    const coverImg = trigger.querySelector('img');
-    const image = coverImg ? coverImg.getBoundingClientRect() : cover;
-    const scaleX = cover.width ? image.width / cover.width : 1;
-    const scaleY = cover.height ? image.height / cover.height : 1;
-    const fullWidth = cover.width * scaleX;
-    const fullHeight = cover.height * scaleY;
-    const fullLeft = cover.left - (fullWidth - cover.width) / 2;
-    const fullTop = cover.top - (fullHeight - cover.height) / 2;
-    const insetX = (fullWidth - cover.width) / 2;
-    const insetY = (fullHeight - cover.height) / 2;
-    const card = trigger.closest('.post-inner');
-    const radius = (card ? getComputedStyle(card).borderTopLeftRadius : '') || '.75rem';
-    const coverFilter = coverImg ? getComputedStyle(coverImg).filter : 'none';
-    overlay.style.setProperty('--ag-art-x', `${cover.left}px`);
-    overlay.style.setProperty('--ag-art-y', `${cover.top}px`);
-    overlay.style.setProperty('--ag-art-w', `${cover.width}px`);
-    overlay.style.setProperty('--ag-art-h', `${cover.height}px`);
-    overlay.style.setProperty('--ag-art-full-x', `${fullLeft}px`);
-    overlay.style.setProperty('--ag-art-full-y', `${fullTop}px`);
-    overlay.style.setProperty('--ag-art-full-w', `${fullWidth}px`);
-    overlay.style.setProperty('--ag-art-full-h', `${fullHeight}px`);
-    overlay.style.setProperty('--ag-art-radius', radius);
-    overlay.style.setProperty('--ag-clip-start', `inset(${insetY}px ${insetX}px round ${radius} ${radius} 0 0)`);
-    overlay.style.setProperty('--ag-art-filter', coverFilter || 'none');
-    const below = innerHeight - cover.bottom;
-    const above = cover.top;
-    overlay.dataset.placement = below >= 220 || below >= above ? 'below' : 'above';
+    const box = measure();
+    camera = poseForRect(
+      rects[0],
+      { x: box.left, y: box.top, w: box.width, h: box.height },
+      viewport,
+      viewScale
+    );
+    targetScale = viewScale;
+    zoomAnchor = { x: viewport.width / 2, y: viewport.height / 2 };
+    bounds = boundsForPose(content, camera, viewport);
 
+    // The page crops the cover to a banner. Opening that crop into the whole
+    // artwork is the first move of the room: same width, same centre, and the
+    // trim disappears instead of the picture jumping. It is written while the
+    // room is still hidden, so the crop has no transition of its own.
+    const projected = projectRect(camera, viewport, rects[0]);
+    const crop = Math.max(0, (projected.h - box.height) / 2);
+    works[0].style.setProperty('--ag-crop', `${crop.toFixed(2)}px`);
+    works[0].setAttribute('data-arrived', '');
+    works.forEach(work => {
+      work.style.removeProperty('transition-delay');
+    });
+
+    apply();
     overlay.hidden = false;
-    resetArt(itemAt(active));
-    renderThumbs();
-    renderMeta();
-    resetProgress();
-    info.scrollTop = 0;
-    // Let the clipped window paint once, then dissolve the frame and let the
-    // hovered image brighten into the spotlight.
+    renderPlacard();
+    renderIndex();
+    apply();
     void overlay.offsetWidth;
-    overlay.style.setProperty('--ag-art-filter', 'none');
     overlay.classList.add('is-open');
+    overlay.focus({ preventScroll: true });
 
     releasePlayer = holdSitePlayer();
-    loadTrack({ play: true });
+
+    later(() => {
+      entryDone = true;
+      // The entry delays are one-shot: later lighting changes must not wait.
+      works.forEach(work => {
+        work.removeAttribute('data-arrived');
+        work.style.transitionDelay = '0ms';
+      });
+      apply();
+    }, reducedMotion.matches ? 120 : 1750);
+
+    later(() => setTrack({ fadeIn: 1400 }), reducedMotion.matches ? 160 : 900);
+
+    if (hintEl && !sessionStorage.getItem('anchors-room-hint')) {
+      hintEl.textContent = matchMedia('(hover: none)').matches
+        ? '单指移动 · 双指缩放 · 轻点画面走到它面前'
+        : '拖动移动 · 滚轮缩放 · 点击画面走到它面前';
+      later(() => hintEl.setAttribute('data-visible', ''), reducedMotion.matches ? 200 : 2400);
+      later(() => hintEl.removeAttribute('data-visible'), 9000);
+      try {
+        sessionStorage.setItem('anchors-room-hint', '1');
+      } catch {}
+    }
 
     if (!history.state?.anchorsGallery) {
       // Keep Astro's index/scroll fields so leaving the room does not disturb
       // the router's direction tracking.
       history.pushState({ ...(history.state || {}), anchorsGallery: true }, '', location.href);
     }
-    requestAnimationFrame(() => overlay.focus({ preventScroll: true }));
   }
 
-  function closeGallery({ immediate = false, resumeGlobal = true } = {}) {
+  function closeRoom({ immediate = false, resumeGlobal = true } = {}) {
     if (!open) return;
     open = false;
-    switchToken += 1;
-    switching = false;
+    entryDone = false;
+    placardVisible = false;
+    bounds = content;
     fadeToken += 1;
+    clearTimers();
+    tween = null;
+    inertia = null;
+    pointer = null;
+    pinch = null;
+    pointers.clear();
     if (immediate) audio.pause();
     else fadeAudio(0, 900, () => audio.pause());
     releasePlayer(resumeGlobal);
     releasePlayer = () => {};
     overlay.classList.remove('is-open');
+    overlay.removeAttribute('data-dragging');
+    placard.removeAttribute('data-visible');
+    hintEl?.removeAttribute('data-visible');
+    works.forEach(work => {
+      work.removeAttribute('data-lit');
+      work.removeAttribute('data-arrived');
+      work.style.removeProperty('--ag-crop');
+      work.style.removeProperty('transition-delay');
+    });
 
     const finish = () => {
       if (open) return;
       overlay.hidden = true;
-      overlay.dataset.placement = '';
-      for (const name of ['x', 'y', 'w', 'h', 'full-x', 'full-y', 'full-w', 'full-h', 'filter', 'radius']) {
-        overlay.style.removeProperty(`--ag-art-${name}`);
-      }
-      overlay.style.removeProperty('--ag-clip-start');
+      worldEl.style.transform = '';
       document.documentElement.style.overflow = previousHtmlOverflow;
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.classList.remove('anchors-gallery-open');
@@ -307,7 +449,7 @@ export function initAnchorsGallery(root, signal) {
     };
 
     if (immediate) finish();
-    else setTimeout(finish, reducedMotion.matches ? 0 : 480);
+    else later(finish, reducedMotion.matches ? 0 : 460);
 
     if (!immediate && history.state?.anchorsGallery) {
       // Leave the room by stepping out of its history entry. The early window
@@ -324,29 +466,22 @@ export function initAnchorsGallery(root, signal) {
     // so its overlay is gone before the outgoing snapshot is taken.
     if (location.pathname + location.search !== pagePath) {
       closingViaHistory = false;
-      closeGallery({ immediate: true, resumeGlobal: false });
+      closeRoom({ immediate: true, resumeGlobal: false });
       return false;
     }
     if (event.state?.anchorsGallery) {
-      if (!open) openGallery();
+      if (!open) openRoom();
       return true;
     }
     if (open || closingViaHistory) {
       closingViaHistory = false;
-      if (open) closeGallery({ resumeGlobal: true });
+      if (open) closeRoom({ resumeGlobal: true });
       return true;
     }
     return false;
   }
 
-  function onKeydown(event) {
-    if (!open) return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeGallery();
-      return;
-    }
-    if (event.key !== 'Tab') return;
+  function trapFocus(event) {
     const focusables = [...overlay.querySelectorAll('button, input, [href], [tabindex]:not([tabindex="-1"])')]
       .filter(el => !el.hidden && !el.disabled);
     if (!focusables.length) {
@@ -364,18 +499,232 @@ export function initAnchorsGallery(root, signal) {
     }
   }
 
+  function nudge(dx, dy) {
+    cancelMotion();
+    camera = clampCamera(
+      { x: camera.x + dx / camera.scale, y: camera.y + dy / camera.scale, scale: camera.scale },
+      viewport,
+      bounds
+    );
+    apply();
+  }
+
+  function zoomBy(factor) {
+    zoomAnchor = { x: viewport.width / 2, y: viewport.height / 2 };
+    targetScale = clampScale(targetScale * factor);
+    if (reducedMotion.matches) {
+      camera = zoomAt(camera, viewport, zoomAnchor, targetScale);
+      apply();
+    } else {
+      schedule();
+    }
+  }
+
+  function onKeydown(event) {
+    if (!open) return;
+    const key = event.key;
+    if (key === 'Escape') {
+      event.preventDefault();
+      closeRoom();
+      return;
+    }
+    if (key === 'Tab') {
+      trapFocus(event);
+      return;
+    }
+    if (key >= '1' && key <= '9') {
+      const index = Number(key) - 1;
+      if (index < items.length) {
+        event.preventDefault();
+        centerTo(index, { focus: true });
+      }
+      return;
+    }
+    const step = Math.min(360, Math.max(80, viewport.width * 0.16));
+    const moves = {
+      ArrowLeft: [-step, 0],
+      ArrowRight: [step, 0],
+      ArrowUp: [0, -step],
+      ArrowDown: [0, step]
+    };
+    if (moves[key]) {
+      event.preventDefault();
+      nudge(moves[key][0], moves[key][1]);
+      return;
+    }
+    if (key === '+' || key === '=') {
+      event.preventDefault();
+      zoomBy(1.15);
+    } else if (key === '-' || key === '_') {
+      event.preventDefault();
+      zoomBy(1 / 1.15);
+    }
+  }
+
+  function onPointerDown(event) {
+    if (!open) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    cancelMotion();
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    try {
+      viewportEl.setPointerCapture(event.pointerId);
+    } catch {}
+
+    if (pointers.size === 1) {
+      pointer = {
+        id: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        lastTime: performance.now(),
+        startedAt: performance.now(),
+        moved: false,
+        target: event.target
+      };
+      velocity = { x: 0, y: 0 };
+    } else if (pointers.size === 2) {
+      pointer = null;
+      startPinch();
+    }
+  }
+
+  function onPointerMove(event) {
+    if (!open || !pointers.has(event.pointerId)) return;
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (pointers.size === 2 && pinch) {
+      movePinch();
+      return;
+    }
+    if (!pointer || pointer.id !== event.pointerId) return;
+
+    if (!pointer.moved) {
+      const travel = Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY);
+      if (travel <= 6) return;
+      pointer.moved = true;
+      overlay.setAttribute('data-dragging', '');
+    }
+
+    const now = performance.now();
+    const dt = Math.max(1, now - pointer.lastTime) / 1000;
+    const dx = event.clientX - pointer.lastX;
+    const dy = event.clientY - pointer.lastY;
+    velocity = { x: dx / dt, y: dy / dt };
+    pointer.lastX = event.clientX;
+    pointer.lastY = event.clientY;
+    pointer.lastTime = now;
+
+    camera = clampCamera(
+      { x: camera.x - dx / camera.scale, y: camera.y - dy / camera.scale, scale: camera.scale },
+      viewport,
+      bounds
+    );
+    apply();
+  }
+
+  function onPointerUp(event) {
+    if (!open) return;
+    const wasPinch = pointers.size > 1;
+    pointers.delete(event.pointerId);
+    if (pointers.size < 2) pinch = null;
+
+    if (pointers.size === 1) {
+      // One finger lifted mid-pinch: let the other one keep panning.
+      const [id, point] = [...pointers.entries()][0];
+      pointer = {
+        id,
+        startX: point.x,
+        startY: point.y,
+        lastX: point.x,
+        lastY: point.y,
+        lastTime: performance.now(),
+        startedAt: performance.now(),
+        moved: true,
+        target: null
+      };
+      return;
+    }
+    if (wasPinch) {
+      pointer = null;
+      return;
+    }
+
+    const tap = pointer && !pointer.moved && performance.now() - pointer.startedAt < 360;
+    const target = pointer?.target;
+    const travel = pointer ? Math.hypot(velocity.x, velocity.y) : 0;
+    overlay.removeAttribute('data-dragging');
+
+    if (tap && target) {
+      const work = target.closest?.('[data-gallery-work]');
+      if (work) centerTo(Number(work.dataset.index));
+    } else if (pointer?.moved && !reducedMotion.matches && travel > 160) {
+      inertia = { x: velocity.x, y: velocity.y, time: performance.now() };
+      schedule();
+    }
+    pointer = null;
+  }
+
+  function startPinch() {
+    const [a, b] = [...pointers.values()];
+    pinch = {
+      distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+      scale: camera.scale,
+      mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+    };
+  }
+
+  function movePinch() {
+    const [a, b] = [...pointers.values()];
+    if (!a || !b) return;
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const distance = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+    const next = clampScale(pinch.scale * (distance / pinch.distance));
+    const zoomed = zoomAt(camera, viewport, mid, next);
+    camera = clampCamera(
+      {
+        x: zoomed.x - (mid.x - pinch.mid.x) / next,
+        y: zoomed.y - (mid.y - pinch.mid.y) / next,
+        scale: next
+      },
+      viewport,
+      bounds
+    );
+    pinch.mid = mid;
+    targetScale = next;
+    apply();
+  }
+
+  function onWheel(event) {
+    if (!open) return;
+    event.preventDefault();
+    tween = null;
+    inertia = null;
+    zoomAnchor = { x: event.clientX, y: event.clientY };
+    const delta = Math.max(-120, Math.min(120, event.deltaY));
+    const factor = Math.exp(-delta * (event.ctrlKey ? 0.012 : 0.0024));
+    targetScale = clampScale(targetScale * factor);
+    if (reducedMotion.matches) {
+      camera = zoomAt(camera, viewport, zoomAnchor, targetScale);
+      apply();
+      return;
+    }
+    schedule();
+  }
+
   function togglePlay() {
     if (audio.paused) {
       if (!audio.src) {
-        loadTrack({ play: true });
+        setTrack({ fadeIn: 600 });
         return;
       }
       audio.volume = 0;
+      const token = fadeToken;
       const attempt = audio.play();
       if (attempt?.then) {
         attempt.then(() => {
-          if (!open) return;
-          fadeAudio(1, 600);
+          if (!open || token !== fadeToken) return;
+          fadeAudio(1, 600, undefined, token);
           updatePlaying(true);
         }).catch(() => updatePlaying(false));
       }
@@ -392,13 +741,26 @@ export function initAnchorsGallery(root, signal) {
     currentEl.textContent = formatTime(audio.currentTime);
   }
 
-  trigger.addEventListener('click', openGallery, { signal });
-  closeBtn.addEventListener('click', () => closeGallery(), { signal });
+  trigger.addEventListener('click', openRoom, { signal });
+  closeBtn.addEventListener('click', () => closeRoom(), { signal });
   playBtn.addEventListener('click', togglePlay, { signal });
   progressEl.addEventListener('input', seek, { signal });
-  thumbs.forEach(button => button.addEventListener('click', () => {
-    switchTo(Number(button.dataset.index));
+  indexButtons.forEach(button => button.addEventListener('click', () => {
+    centerTo(Number(button.dataset.index));
   }, { signal }));
+  works.forEach((work, index) => {
+    work.addEventListener('focus', () => {
+      if (!open || !work.matches(':focus-visible')) return;
+      if (index === active) return;
+      centerTo(index);
+    }, { signal });
+  });
+
+  viewportEl.addEventListener('pointerdown', onPointerDown, { signal });
+  viewportEl.addEventListener('pointermove', onPointerMove, { signal });
+  viewportEl.addEventListener('pointerup', onPointerUp, { signal });
+  viewportEl.addEventListener('pointercancel', onPointerUp, { signal });
+  viewportEl.addEventListener('wheel', onWheel, { signal, passive: false });
 
   audio.addEventListener('loadedmetadata', () => {
     durationEl.textContent = formatTime(audio.duration);
@@ -418,6 +780,14 @@ export function initAnchorsGallery(root, signal) {
     currentEl.textContent = '0:00';
   }, { signal });
 
+  window.addEventListener('resize', () => {
+    if (!open) return;
+    measure();
+    renderPlacard();
+    camera = clampCamera(camera, viewport, bounds);
+    apply();
+  }, { signal });
+
   window.__anchorsGalleryPopState = onPopState;
   document.addEventListener('keydown', onKeydown, { signal });
   document.addEventListener('site:before-navigation', () => {
@@ -427,12 +797,13 @@ export function initAnchorsGallery(root, signal) {
       const { anchorsGallery, ...rest } = history.state;
       history.replaceState(rest, '', location.href);
     }
-    closeGallery({ immediate: true, resumeGlobal: false });
+    closeRoom({ immediate: true, resumeGlobal: false });
   }, { signal });
 
   signal.addEventListener('abort', () => {
     if (window.__anchorsGalleryPopState === onPopState) delete window.__anchorsGalleryPopState;
-    closeGallery({ immediate: true, resumeGlobal: false });
+    clearTimers();
+    closeRoom({ immediate: true, resumeGlobal: false });
     audio.pause();
     audio.removeAttribute('src');
     audio.load();

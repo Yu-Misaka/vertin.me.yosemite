@@ -14,11 +14,65 @@ interface Props {
 }
 
 const { items } = Astro.props;
-const exhibits = await Promise.all(items.map(async (item) => ({
-  ...item,
-  ...(await imageMetadata(item.image))
-})));
-const [first, ...rest] = exhibits;
+
+// Works hang along one long, dark wall rather than in a viewport-shaped list.
+// The first one sits at the origin: entering the room starts from the cover,
+// so the others are placed relative to it. Keeping the wall flat matters — a
+// work above or below the cover would show up in the entry frame whenever the
+// page happens to be scrolled. The gaps widen to the right so the wall reads as
+// receding into the dark.
+const slots = [
+  { cx: 0, cy: 0, h: 640 },
+  { cx: 2000, cy: -70, h: 700 },
+  { cx: 3900, cy: 60, h: 620 },
+  { cx: 5600, cy: -30, h: 660 }
+];
+
+const exhibits = await Promise.all(items.map(async (item, index) => {
+  const meta = await imageMetadata(item.image);
+  const slot = slots[index] ?? {
+    cx: 5600 + (index - 3) * 1750,
+    cy: index % 2 ? 60 : -70,
+    h: 620
+  };
+  const height = slot.h;
+  const width = meta.width && meta.height ? Math.round(height * meta.width / meta.height) : height;
+  const rect = {
+    x: Math.round(slot.cx - width / 2),
+    y: Math.round(slot.cy - height / 2),
+    w: width,
+    h: height
+  };
+  // Light arrives from the cover outwards, not all at once.
+  const distance = Math.hypot(slot.cx, slot.cy);
+  return {
+    ...item,
+    imageWidth: meta.width ?? 0,
+    imageHeight: meta.height ?? 0,
+    rect,
+    delay: index === 0 ? 0 : Math.min(1400, Math.round(560 + distance / 6))
+  };
+}));
+
+const content = exhibits.reduce((box, item) => ({
+  x: Math.min(box.x, item.rect.x),
+  y: Math.min(box.y, item.rect.y),
+  right: Math.max(box.right, item.rect.x + item.rect.w),
+  bottom: Math.max(box.bottom, item.rect.y + item.rect.h)
+}), { x: Infinity, y: Infinity, right: -Infinity, bottom: -Infinity });
+const room = { x: content.x, y: content.y, w: content.right - content.x, h: content.bottom - content.y };
+
+const payload = {
+  content: room,
+  works: exhibits.map(item => ({
+    image: item.image,
+    audio: item.audio,
+    track: item.track,
+    title: item.title,
+    note: item.note ?? '',
+    rect: item.rect
+  }))
+};
 const pad = (value: number) => String(value).padStart(2, '0');
 ---
 
@@ -33,21 +87,30 @@ const pad = (value: number) => String(value).padStart(2, '0');
 >
   <div class="anchors-gallery__backdrop" aria-hidden="true"></div>
 
-  <figure class="anchors-gallery__art" data-gallery-art>
-    <div class="anchors-gallery__art-window" data-gallery-art-window>
-      <img
-        class="anchors-gallery__art-layer"
-        data-gallery-main
-        src={first.image}
-        alt={first.title}
-        width={first.width}
-        height={first.height}
-        decoding="async"
-      />
-      <img class="anchors-gallery__art-layer" data-gallery-next alt="" aria-hidden="true" />
+  <div class="anchors-gallery__viewport" data-gallery-viewport>
+    <div class="anchors-gallery__world" data-gallery-world>
+      {exhibits.map((item, index) => (
+        <button
+          type="button"
+          class="anchors-gallery__work"
+          data-gallery-work
+          data-index={index}
+          style={`--ag-x:${item.rect.x}px;--ag-y:${item.rect.y}px;--ag-w:${item.rect.w}px;--ag-h:${item.rect.h}px;--ag-in:${item.delay}ms`}
+          aria-label={`第 ${index + 1} 件，共 ${exhibits.length} 件：《${item.title}》。点击走到它面前`}
+        >
+          <span class="anchors-gallery__pool" aria-hidden="true"></span>
+          <img
+            src={item.image}
+            alt=""
+            width={item.imageWidth}
+            height={item.imageHeight}
+            decoding="async"
+            draggable="false"
+          />
+        </button>
+      ))}
     </div>
-  </figure>
-  <div class="anchors-gallery__frame" data-gallery-frame aria-hidden="true"></div>
+  </div>
 
   <div class="anchors-gallery__chrome" data-gallery-chrome>
     <button type="button" class="anchors-gallery__close" data-gallery-close aria-label="离开展厅">
@@ -55,203 +118,204 @@ const pad = (value: number) => String(value).padStart(2, '0');
       <span>离开展厅</span>
     </button>
 
-    <div class="anchors-gallery__info" data-gallery-info>
-      <div class="anchors-gallery__caption">
-        <p class="anchors-gallery__count" data-gallery-count>01 / {pad(exhibits.length)}</p>
-        <h2 class="anchors-gallery__title" id="anchors-gallery-title" data-gallery-title>{first.title}</h2>
-        <p class="anchors-gallery__note" data-gallery-note>{first.note}</p>
-      </div>
+    <nav class="anchors-gallery__index" aria-label="展品索引">
+      {exhibits.map((item, index) => (
+        <button
+          type="button"
+          class="anchors-gallery__index-item"
+          data-gallery-index
+          data-index={index}
+          aria-label={`前往第 ${index + 1} 件：《${item.title}》`}
+        >
+          {pad(index + 1)}
+        </button>
+      ))}
+    </nav>
 
-      <div class="anchors-gallery__meta-row">
-        <aside class="anchors-gallery__player" aria-label="展厅播放器" data-gallery-player>
-          <p class="anchors-gallery__label">Now playing</p>
-          <p class="anchors-gallery__track" data-gallery-track>{first.track}</p>
-          <div class="anchors-gallery__controls">
-            <button type="button" class="anchors-gallery__play" data-gallery-play aria-label="播放">
-              <svg class="anchors-gallery__icon anchors-gallery__icon--play" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M8 5.5v13l11-6.5z" />
-              </svg>
-              <svg class="anchors-gallery__icon anchors-gallery__icon--pause" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M8 5.5h3v13H8zM13 5.5h3v13h-3z" />
-              </svg>
-            </button>
-            <div class="anchors-gallery__time" aria-hidden="true">
-              <span data-gallery-current>0:00</span>
-              <span class="anchors-gallery__time-sep">/</span>
-              <span data-gallery-duration>0:00</span>
-            </div>
-          </div>
-          <input
-            class="anchors-gallery__progress"
-            type="range"
-            min="0"
-            max="1000"
-            step="1"
-            value="0"
-            aria-label="播放进度"
-            data-gallery-progress
-          />
-          <p class="anchors-gallery__hint">点击小图，换一件展品</p>
-        </aside>
-
-        <div class="anchors-gallery__wall" aria-label="其他展品" data-gallery-wall>
-          {rest.map((item, index) => (
-            <button
-              type="button"
-              class="anchors-gallery__thumb"
-              data-gallery-thumb
-              data-index={index + 1}
-              aria-label={`查看《${item.title}》`}
-            >
-              <img
-                data-thumb-image
-                src={item.image}
-                alt=""
-                width={item.width}
-                height={item.height}
-                loading="lazy"
-                decoding="async"
-              />
-              <span class="anchors-gallery__thumb-caption">
-                <span class="anchors-gallery__thumb-index" data-thumb-index>{pad(index + 2)}</span>
-                <span class="anchors-gallery__thumb-title" data-thumb-title>{item.title}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+    <p class="anchors-gallery__hint" data-gallery-hint aria-hidden="true"></p>
   </div>
 
-  <script type="application/json" data-gallery-data set:html={JSON.stringify(exhibits)} />
+  <aside class="anchors-gallery__placard" data-gallery-placard>
+    <div class="anchors-gallery__caption">
+      <h2 class="anchors-gallery__title" id="anchors-gallery-title" data-gallery-title></h2>
+      <p class="anchors-gallery__note" data-gallery-note></p>
+    </div>
+
+    <div class="anchors-gallery__player" data-gallery-player>
+      <div class="anchors-gallery__controls">
+        <button type="button" class="anchors-gallery__play" data-gallery-play aria-label="播放">
+          <svg class="anchors-gallery__icon anchors-gallery__icon--play" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5.5v13l11-6.5z" />
+          </svg>
+          <svg class="anchors-gallery__icon anchors-gallery__icon--pause" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5.5h3v13H8zM13 5.5h3v13h-3z" />
+          </svg>
+        </button>
+        <div class="anchors-gallery__time" aria-hidden="true">
+          <span data-gallery-current>0:00</span>
+          <span class="anchors-gallery__time-sep">/</span>
+          <span data-gallery-duration>0:00</span>
+        </div>
+      </div>
+      <p class="anchors-gallery__track" data-gallery-track></p>
+      <input
+        class="anchors-gallery__progress"
+        type="range"
+        min="0"
+        max="1000"
+        step="1"
+        value="0"
+        aria-label="播放进度"
+        data-gallery-progress
+      />
+    </div>
+  </aside>
+
+  <p class="anchors-gallery__status" data-gallery-status role="status" aria-live="polite"></p>
+  <script type="application/json" data-gallery-data set:html={JSON.stringify(payload)} />
   <audio data-gallery-audio preload="none"></audio>
 </div>
 
 <style is:global>
   .anchors-gallery {
     --ag-ink: #e9e1d4;
-    --ag-muted: #9a9287;
+    --ag-muted: #8e867b;
     --ag-line: rgb(233 225 212 / 12%);
     --ag-accent: #c7a36b;
-    /* Lighting changes need a calmer curve than the UI's snappy feedback ease. */
+    /* Lighting needs a calmer curve than the UI's snappy feedback ease. */
     --ag-ease: cubic-bezier(.35, 0, .2, 1);
+    /* Lights go out quickly and then keep falling: the eye adapts last. */
+    --ag-dark: cubic-bezier(.12, .62, .24, 1);
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    z-index: 1000;
+    inset: 0;
+    z-index: 1200;
+    overflow: hidden;
     color: var(--ag-ink);
     font-family: var(--font-body);
     outline: none;
     isolation: isolate;
+    cursor: grab;
+    touch-action: none;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .anchors-gallery[hidden] { display: none; }
+
+  .anchors-gallery[data-dragging] { cursor: grabbing; }
 
   .anchors-gallery__backdrop {
     position: absolute;
     inset: 0;
     z-index: 0;
     background:
-      radial-gradient(ellipse 58% 52% at 36% 44%, rgb(255 214 160 / 7%), transparent 70%),
-      radial-gradient(ellipse 70% 60% at 74% 18%, rgb(84 96 120 / 6%), transparent 62%),
-      #060607;
+      radial-gradient(ellipse 90% 70% at 50% 42%, #09090b, #050506 72%),
+      #050506;
     opacity: 0;
-    transition: opacity 440ms var(--ag-ease);
-  }
-
-  .anchors-gallery__backdrop::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    box-shadow: inset 0 0 140px 30px rgb(0 0 0 / 72%);
-    pointer-events: none;
+    transition: opacity 460ms var(--ag-ease);
   }
 
   .anchors-gallery.is-open .anchors-gallery__backdrop {
     opacity: 1;
-    transition: opacity 560ms var(--ag-ease);
+    transition: opacity 640ms var(--ag-dark);
   }
 
-  /* The artwork's box is the cover's hovered image, not its frame. The window
-     starts clipped to the frame and expands to the full hovered image, so the
-     border appears to dissolve while the picture itself never moves. */
-  .anchors-gallery__art {
-    position: fixed;
-    left: var(--ag-art-full-x, 0px);
-    top: var(--ag-art-full-y, 0px);
-    width: var(--ag-art-full-w, 0px);
-    height: var(--ag-art-full-h, 0px);
+  .anchors-gallery__viewport {
+    position: absolute;
+    inset: 0;
     z-index: 1;
-    margin: 0;
-    background: transparent;
-    box-shadow: 0 0 0 0 transparent;
-    transition: box-shadow 340ms var(--ag-ease);
-  }
-
-  .anchors-gallery.is-open .anchors-gallery__art {
-    box-shadow:
-      0 34px 110px rgb(0 0 0 / 55%),
-      0 0 130px rgb(255 214 160 / 7%);
-    transition: box-shadow 700ms var(--ag-ease) 220ms;
-  }
-
-  .anchors-gallery__art-window {
-    position: absolute;
-    inset: 0;
     overflow: hidden;
-    clip-path: var(--ag-clip-start, inset(0));
-    transition: clip-path 420ms var(--ag-ease);
   }
 
-  .anchors-gallery.is-open .anchors-gallery__art-window {
-    clip-path: inset(0 0 0 0 round 0);
-    transition: clip-path 760ms var(--ag-ease) 80ms;
-  }
-
-  .anchors-gallery .anchors-gallery__art-layer {
+  /* One transform moves the room. Works keep their world rects forever, so a
+     work never changes size or position relative to its neighbours. */
+  .anchors-gallery__world {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+
+  .anchors-gallery__work {
+    position: absolute;
+    left: var(--ag-x);
+    top: var(--ag-y);
+    width: var(--ag-w);
+    height: var(--ag-h);
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    opacity: 0;
+    filter: brightness(.7);
+    transition-property: opacity, filter;
+    transition-duration: 1100ms, 900ms;
+    transition-timing-function: var(--ag-ease);
+  }
+
+  /* The room appears around the work the visitor is already standing at. */
+  .anchors-gallery.is-open .anchors-gallery__work {
+    opacity: .4;
+    transition-delay: var(--ag-in, 0ms);
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__work[data-lit] {
+    opacity: 1;
+    filter: none;
+  }
+
+  /* The cover is already lit: it must not fade in with the rest of the room. */
+  .anchors-gallery.is-open .anchors-gallery__work[data-arrived] {
+    transition-duration: 0ms, 900ms;
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__work:not([data-lit]):hover {
+    opacity: .72;
+    filter: brightness(.9);
+  }
+
+  .anchors-gallery__work img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
-    opacity: 0;
-    filter: var(--ag-art-filter, none);
-    transition:
-      opacity 380ms var(--ag-ease),
-      filter 320ms var(--ag-ease);
+    -webkit-user-drag: none;
+    /* The page crops covers to a banner; opening the crop reveals the work. */
+    clip-path: inset(var(--ag-crop, 0px) 0);
+    transition: clip-path 780ms var(--ag-ease) 60ms;
   }
 
-  .anchors-gallery__art-layer[data-gallery-main] { opacity: 1; }
+  .anchors-gallery.is-open .anchors-gallery__work img { clip-path: inset(0); }
 
-  /* The old frame hairline is kept at the original cover rect and dissolves
-     while the picture expands past it. */
-  .anchors-gallery__frame {
-    position: fixed;
-    left: var(--ag-art-x, 0px);
-    top: var(--ag-art-y, 0px);
-    width: var(--ag-art-w, 0px);
-    height: var(--ag-art-h, 0px);
-    z-index: 2;
-    border-top-left-radius: var(--ag-art-radius, .75rem);
-    border-top-right-radius: var(--ag-art-radius, .75rem);
-    box-shadow: inset 0 0 0 1px rgb(233 225 212 / 14%);
-    opacity: 0;
+  /* Light spills from each work onto the wall around it, so a work reads as a
+     lit object rather than a floating rectangle. */
+  .anchors-gallery__pool {
+    position: absolute;
+    inset: -16% -14%;
+    z-index: -1;
     pointer-events: none;
+    background: radial-gradient(
+      closest-side,
+      rgb(255 224 184 / 15%),
+      rgb(255 224 184 / 4%) 58%,
+      transparent 78%
+    );
+    opacity: 0;
+    transition: opacity 1200ms var(--ag-ease);
   }
 
-  .anchors-gallery.is-open .anchors-gallery__frame {
-    animation: anchors-frame-dissolve 760ms linear forwards;
+  .anchors-gallery.is-open .anchors-gallery__pool {
+    opacity: 1;
+    transition-delay: calc(var(--ag-in, 0ms) + 160ms);
   }
 
-  @keyframes anchors-frame-dissolve {
-    0%, 15% { opacity: 1; }
-    100% { opacity: 0; }
-  }
+  .anchors-gallery__work:not([data-lit]) .anchors-gallery__pool { opacity: .3; }
 
   .anchors-gallery__chrome {
     position: fixed;
@@ -259,19 +323,18 @@ const pad = (value: number) => String(value).padStart(2, '0');
     z-index: 3;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 260ms var(--ag-ease);
+    transition: opacity 240ms var(--ag-ease);
   }
 
   .anchors-gallery.is-open .anchors-gallery__chrome {
     opacity: 1;
-    transition: opacity 520ms var(--ag-ease) 320ms;
+    transition: opacity 620ms var(--ag-ease) 1500ms;
   }
 
   .anchors-gallery__close {
-    position: fixed;
+    position: absolute;
     top: clamp(18px, 3vw, 34px);
     left: clamp(18px, 3vw, 34px);
-    z-index: 3;
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -284,7 +347,7 @@ const pad = (value: number) => String(value).padStart(2, '0');
     font-size: .78rem;
     letter-spacing: .12em;
     cursor: pointer;
-    opacity: .55;
+    opacity: .5;
     pointer-events: auto;
     transition:
       opacity 220ms var(--motion-ease),
@@ -301,107 +364,121 @@ const pad = (value: number) => String(value).padStart(2, '0');
     background: rgb(255 255 255 / 5%);
   }
 
-  .anchors-gallery__info {
-    position: fixed;
-    left: var(--ag-art-x, 0px);
-    top: calc(var(--ag-art-y, 0px) + var(--ag-art-h, 0px) + 22px);
-    width: var(--ag-art-w, 0px);
-    max-height: calc(100vh - var(--ag-art-y, 0px) - var(--ag-art-h, 0px) - 46px);
-    max-height: calc(100dvh - var(--ag-art-y, 0px) - var(--ag-art-h, 0px) - 46px);
+  .anchors-gallery__index {
+    position: absolute;
+    left: clamp(18px, 3vw, 34px);
+    bottom: clamp(18px, 3vw, 30px);
     display: flex;
-    flex-direction: column;
-    gap: 18px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    padding-right: 4px;
+    gap: 2px;
     pointer-events: auto;
   }
 
-  .anchors-gallery[data-placement="above"] .anchors-gallery__info {
-    top: auto;
-    bottom: calc(100dvh - var(--ag-art-y, 0px) + 22px);
-    max-height: calc(var(--ag-art-y, 0px) - 44px);
-    flex-direction: column-reverse;
+  .anchors-gallery__index-item {
+    padding: 6px 8px;
+    border: 0;
+    background: none;
+    color: var(--ag-muted);
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    letter-spacing: .18em;
+    line-height: 1;
+    cursor: pointer;
+    opacity: .4;
+    transition: opacity 220ms var(--motion-ease), color 220ms var(--motion-ease);
+  }
+
+  .anchors-gallery__index-item:hover,
+  .anchors-gallery__index-item:focus-visible { opacity: .9; color: var(--ag-ink); }
+
+  .anchors-gallery__index-item[aria-current="true"] {
+    color: var(--ag-ink);
+    opacity: 1;
+    box-shadow: 0 1px 0 0 rgb(233 225 212 / 35%);
+  }
+
+  .anchors-gallery__hint {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(18px, 3vw, 30px);
+    margin: 0;
+    transform: translateX(-50%);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    color: var(--ag-muted);
+    opacity: 0;
+    transition: opacity 700ms var(--ag-ease);
+    white-space: nowrap;
+  }
+
+  .anchors-gallery__hint[data-visible] { opacity: .55; }
+
+  /* The placard is a wall label plus an audio guide: it belongs to one work,
+     so it follows that work and leaves when the work leaves the view. */
+  .anchors-gallery__placard {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    width: clamp(196px, 19vw, 272px);
+    display: grid;
+    gap: 14px;
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform;
+    transition: opacity 380ms var(--ag-ease);
+  }
+
+  .anchors-gallery__placard[data-visible] {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 760ms var(--ag-ease);
   }
 
   .anchors-gallery__caption {
     display: grid;
-    gap: 8px;
-    padding-left: 2px;
-  }
-
-  .anchors-gallery__count {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: .66rem;
-    letter-spacing: .24em;
-    text-transform: uppercase;
-    color: var(--ag-accent);
+    gap: 7px;
   }
 
   .anchors-gallery__title {
     margin: 0;
-    font-size: clamp(1.35rem, 2.2vw, 1.9rem);
+    font-size: clamp(1.12rem, 1.5vw, 1.42rem);
     font-weight: 400;
     letter-spacing: .04em;
+    line-height: 1.3;
     color: var(--ag-ink);
+  }
+
+  .anchors-gallery__title::before {
+    content: none;
   }
 
   .anchors-gallery__note {
-    max-width: 40ch;
     margin: 0;
-    font-size: .9rem;
-    line-height: 1.75;
+    font-size: .82rem;
+    line-height: 1.7;
     color: var(--ag-muted);
   }
 
-  .anchors-gallery__meta-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 22px 32px;
-  }
+  .anchors-gallery__note:empty { display: none; }
 
   .anchors-gallery__player {
-    flex: 1 1 250px;
-    min-width: 210px;
-    max-width: 330px;
     display: grid;
-    gap: 10px;
-    padding: 14px 0 0 20px;
-    border-left: 1px solid var(--ag-line);
-  }
-
-  .anchors-gallery__label {
-    margin: 0;
-    font-family: var(--font-mono);
-    font-size: .6rem;
-    letter-spacing: .28em;
-    text-transform: uppercase;
-    color: var(--ag-muted);
-  }
-
-  .anchors-gallery__track {
-    margin: 0;
-    font-size: 1.02rem;
-    font-style: italic;
-    line-height: 1.4;
-    color: var(--ag-ink);
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--ag-line);
   }
 
   .anchors-gallery__controls {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-top: 2px;
   }
 
   .anchors-gallery__play {
     display: grid;
     place-items: center;
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     padding: 0;
     border: 1px solid var(--ag-line);
     border-radius: 999px;
@@ -420,8 +497,8 @@ const pad = (value: number) => String(value).padStart(2, '0');
   }
 
   .anchors-gallery__icon {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     fill: currentColor;
   }
 
@@ -433,15 +510,23 @@ const pad = (value: number) => String(value).padStart(2, '0');
     display: flex;
     gap: 6px;
     font-family: var(--font-mono);
-    font-size: .66rem;
+    font-size: .64rem;
     font-variant-numeric: tabular-nums;
+    color: var(--ag-muted);
+  }
+
+  .anchors-gallery__track {
+    margin: 0;
+    font-size: .86rem;
+    font-style: italic;
+    line-height: 1.4;
     color: var(--ag-muted);
   }
 
   .anchors-gallery__progress {
     --ag-progress: 0%;
     width: 100%;
-    height: 18px;
+    height: 16px;
     margin: 0;
     padding: 0;
     appearance: none;
@@ -460,9 +545,9 @@ const pad = (value: number) => String(value).padStart(2, '0');
   }
 
   .anchors-gallery__progress::-webkit-slider-thumb {
-    width: 9px;
-    height: 9px;
-    margin-top: -4px;
+    width: 8px;
+    height: 8px;
+    margin-top: -3.5px;
     border: 0;
     border-radius: 50%;
     background: var(--ag-ink);
@@ -482,97 +567,23 @@ const pad = (value: number) => String(value).padStart(2, '0');
   }
 
   .anchors-gallery__progress::-moz-range-thumb {
-    width: 9px;
-    height: 9px;
+    width: 8px;
+    height: 8px;
     border: 0;
     border-radius: 50%;
     background: var(--ag-ink);
     box-shadow: 0 0 10px rgb(199 163 107 / 45%);
   }
 
-  .anchors-gallery__hint {
-    margin: 2px 0 0;
-    font-size: .7rem;
-    line-height: 1.5;
-    color: var(--ag-muted);
-    opacity: .75;
-  }
-
-  .anchors-gallery__wall {
-    flex: 1 1 300px;
-    min-width: 0;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 12px;
-    padding-top: 2px;
-  }
-
-  .anchors-gallery__thumb {
-    position: relative;
-    width: 88px;
+  .anchors-gallery__status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
     padding: 0;
-    border: 0;
-    background: none;
-    color: var(--ag-ink);
-    text-align: left;
-    cursor: pointer;
-    opacity: .62;
-    filter: saturate(.85) brightness(.9);
-    transition:
-      opacity 240ms var(--motion-ease),
-      filter 300ms var(--motion-ease),
-      scale 300ms var(--motion-ease);
-  }
-
-  .anchors-gallery__thumb:nth-child(1) { transform: translateY(-6px) rotate(-1.2deg); }
-  .anchors-gallery__thumb:nth-child(2) {
-    width: 104px;
-    transform: translateY(6px) rotate(.8deg);
-  }
-  .anchors-gallery__thumb:nth-child(3) {
-    width: 92px;
-    transform: translateY(-2px) rotate(-.4deg);
-  }
-
-  .anchors-gallery__thumb img {
-    display: block;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 10;
-    object-fit: cover;
-    border: 1px solid var(--ag-line);
-    box-shadow: 0 18px 40px rgb(0 0 0 / 35%);
-    transition:
-      border-color 300ms var(--motion-ease),
-      filter 300ms var(--motion-ease);
-  }
-
-  .anchors-gallery__thumb:hover,
-  .anchors-gallery__thumb:focus-visible {
-    opacity: 1;
-    filter: none;
-    scale: 1.03;
-  }
-
-  .anchors-gallery__thumb:hover img,
-  .anchors-gallery__thumb:focus-visible img {
-    border-color: color-mix(in srgb, var(--ag-accent) 55%, transparent);
-    filter: brightness(1.08);
-  }
-
-  .anchors-gallery__thumb-caption {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    font-size: .66rem;
-    line-height: 1.35;
-    color: var(--ag-muted);
-  }
-
-  .anchors-gallery__thumb-index {
-    font-family: var(--font-mono);
-    color: var(--ag-accent);
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   /* The cover becomes an invitation rather than a plain figure. */
@@ -633,60 +644,29 @@ const pad = (value: number) => String(value).padStart(2, '0');
       left: 12px;
     }
 
-    .anchors-gallery__info {
-      max-height: calc(100vh - var(--ag-art-y, 0px) - var(--ag-art-h, 0px) - 44px);
-      max-height: calc(100dvh - var(--ag-art-y, 0px) - var(--ag-art-h, 0px) - 44px);
-      padding-right: 0;
+    .anchors-gallery__index {
+      left: 12px;
+      bottom: 14px;
     }
 
-    .anchors-gallery__meta-row {
-      flex-direction: column;
-      gap: 18px;
+    .anchors-gallery__hint { display: none; }
+
+    .anchors-gallery__placard {
+      width: min(76vw, 300px);
+      gap: 12px;
     }
-
-    .anchors-gallery__player {
-      flex: 0 0 auto;
-      min-width: 0;
-      max-width: none;
-      padding: 14px 0 0;
-      border-left: 0;
-      border-top: 1px solid var(--ag-line);
-    }
-
-    .anchors-gallery__wall {
-      flex: 0 0 auto;
-      flex-wrap: nowrap;
-      width: 100%;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      scrollbar-width: none;
-    }
-
-    .anchors-gallery__wall::-webkit-scrollbar { display: none; }
-
-    .anchors-gallery__thumb {
-      flex: 0 0 42%;
-      width: 42%;
-    }
-
-    .anchors-gallery__thumb:nth-child(n) { transform: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .anchors-gallery__backdrop,
     .anchors-gallery__chrome,
-    .anchors-gallery__art,
-    .anchors-gallery__art-window,
-    .anchors-gallery__art-layer {
+    .anchors-gallery__placard,
+    .anchors-gallery__work,
+    .anchors-gallery__pool,
+    .anchors-gallery__work img,
+    .anchors-gallery__hint {
       transition-duration: .01ms;
       transition-delay: 0ms;
-    }
-
-    .anchors-gallery__frame { animation-duration: .01ms; }
-
-    /* No frame dissolve and no 1.5% reveal: keep the artwork at its frame crop. */
-    .anchors-gallery.is-open .anchors-gallery__art-window {
-      clip-path: var(--ag-clip-start, inset(0));
     }
   }
 </style>
