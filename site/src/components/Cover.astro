@@ -4,19 +4,47 @@ import { imageMetadata } from '../utils/image-metadata.mjs';
 interface Props {
   src: string;
   eager?: boolean;
+  /** Render the cover as a button that opens the anchors gallery. */
+  interactive?: boolean;
+  alt?: string;
 }
-const { src, eager = false } = Astro.props;
+const { src, eager = false, interactive = false, alt = '头图' } = Astro.props;
 const { width, height } = await imageMetadata(src);
 ---
-<figure class="post-media">
-  <img
-    itemprop="image"
-    src={src}
-    alt="头图"
-    width={width}
-    height={height}
-    loading={eager ? 'eager' : 'lazy'}
-    decoding="async"
-    fetchpriority={eager ? 'high' : 'auto'}
-  />
-</figure>
+{interactive ? (
+  <button
+    type="button"
+    class="post-media post-media--action"
+    data-anchors-open
+    aria-haspopup="dialog"
+    aria-label="进入锚点陈列馆"
+  >
+    <img
+      itemprop="image"
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      fetchpriority={eager ? 'high' : 'auto'}
+    />
+    <span class="post-media__hint" aria-hidden="true">
+      <span>进入陈列馆</span>
+      <span class="post-media__hint-arrow">↗</span>
+    </span>
+  </button>
+) : (
+  <figure class="post-media">
+    <img
+      itemprop="image"
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      fetchpriority={eager ? 'high' : 'auto'}
+    />
+  </figure>
+)}

@@ -72,6 +72,16 @@ const twikooEnvId = site.comments?.provider === "twikoo" ? site.comments.envId :
       .medium-zoom-image--opened{position:relative;cursor:pointer;cursor:zoom-out;will-change:transform}
     </style>
 
+    <!-- Registered before ClientRouter so the anchors room can consume its own
+         history step instead of triggering a same-page transition. -->
+    <script is:inline>
+      if (!window.__anchorsGalleryPopStateGuard) {
+        window.__anchorsGalleryPopStateGuard = true;
+        window.addEventListener('popstate', event => {
+          if (window.__anchorsGalleryPopState?.(event)) event.stopImmediatePropagation();
+        }, true);
+      }
+    </script>
     <ClientRouter fallback="swap" />
     <script>
       import '../scripts/app.js';

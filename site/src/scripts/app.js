@@ -35,6 +35,11 @@ function initPage() {
   onIdle(() => import('./notifications.js').then(({ greet }) => {
     if (!signal.aborted) greet(signal);
   }), signal);
+  if (root.querySelector('[data-anchors-gallery]')) {
+    import('./anchors-gallery.js').then(({ initAnchorsGallery }) => {
+      if (!signal.aborted) initAnchorsGallery(root, signal);
+    }).catch(error => console.warn('陈列馆暂时不可用', error));
+  }
   if (root.querySelector('#search-page')) {
     import('./search.js').then(({ initSearchPage }) => {
       if (!signal.aborted) initSearchPage(root, signal);

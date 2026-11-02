@@ -1,0 +1,692 @@
+---
+import { imageMetadata } from '../utils/image-metadata.mjs';
+
+interface GalleryItem {
+  image: string;
+  audio: string;
+  track: string;
+  title: string;
+  note?: string;
+}
+
+interface Props {
+  items: GalleryItem[];
+}
+
+const { items } = Astro.props;
+const exhibits = await Promise.all(items.map(async (item) => ({
+  ...item,
+  ...(await imageMetadata(item.image))
+})));
+const [first, ...rest] = exhibits;
+const pad = (value: number) => String(value).padStart(2, '0');
+---
+
+<div
+  class="anchors-gallery"
+  data-anchors-gallery
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="anchors-gallery-title"
+  tabindex="-1"
+  hidden
+>
+  <div class="anchors-gallery__backdrop" aria-hidden="true"></div>
+
+  <figure class="anchors-gallery__art" data-gallery-art>
+    <div class="anchors-gallery__art-window" data-gallery-art-window>
+      <img
+        class="anchors-gallery__art-layer"
+        data-gallery-main
+        src={first.image}
+        alt={first.title}
+        width={first.width}
+        height={first.height}
+        decoding="async"
+      />
+      <img class="anchors-gallery__art-layer" data-gallery-next alt="" aria-hidden="true" />
+    </div>
+  </figure>
+  <div class="anchors-gallery__frame" data-gallery-frame aria-hidden="true"></div>
+
+  <div class="anchors-gallery__chrome" data-gallery-chrome>
+    <button type="button" class="anchors-gallery__close" data-gallery-close aria-label="离开展厅">
+      <span aria-hidden="true">←</span>
+      <span>离开展厅</span>
+    </button>
+
+    <div class="anchors-gallery__info" data-gallery-info>
+      <div class="anchors-gallery__caption">
+        <p class="anchors-gallery__count" data-gallery-count>01 / {pad(exhibits.length)}</p>
+        <h2 class="anchors-gallery__title" id="anchors-gallery-title" data-gallery-title>{first.title}</h2>
+        <p class="anchors-gallery__note" data-gallery-note>{first.note}</p>
+      </div>
+
+      <div class="anchors-gallery__meta-row">
+        <aside class="anchors-gallery__player" aria-label="展厅播放器" data-gallery-player>
+          <p class="anchors-gallery__label">Now playing</p>
+          <p class="anchors-gallery__track" data-gallery-track>{first.track}</p>
+          <div class="anchors-gallery__controls">
+            <button type="button" class="anchors-gallery__play" data-gallery-play aria-label="播放">
+              <svg class="anchors-gallery__icon anchors-gallery__icon--play" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5.5v13l11-6.5z" />
+              </svg>
+              <svg class="anchors-gallery__icon anchors-gallery__icon--pause" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5.5h3v13H8zM13 5.5h3v13h-3z" />
+              </svg>
+            </button>
+            <div class="anchors-gallery__time" aria-hidden="true">
+              <span data-gallery-current>0:00</span>
+              <span class="anchors-gallery__time-sep">/</span>
+              <span data-gallery-duration>0:00</span>
+            </div>
+          </div>
+          <input
+            class="anchors-gallery__progress"
+            type="range"
+            min="0"
+            max="1000"
+            step="1"
+            value="0"
+            aria-label="播放进度"
+            data-gallery-progress
+          />
+          <p class="anchors-gallery__hint">点击小图，换一件展品</p>
+        </aside>
+
+        <div class="anchors-gallery__wall" aria-label="其他展品" data-gallery-wall>
+          {rest.map((item, index) => (
+            <button
+              type="button"
+              class="anchors-gallery__thumb"
+              data-gallery-thumb
+              data-index={index + 1}
+              aria-label={`查看《${item.title}》`}
+            >
+              <img
+                data-thumb-image
+                src={item.image}
+                alt=""
+                width={item.width}
+                height={item.height}
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="anchors-gallery__thumb-caption">
+                <span class="anchors-gallery__thumb-index" data-thumb-index>{pad(index + 2)}</span>
+                <span class="anchors-gallery__thumb-title" data-thumb-title>{item.title}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="application/json" data-gallery-data set:html={JSON.stringify(exhibits)} />
+  <audio data-gallery-audio preload="none"></audio>
+</div>
+
+<style is:global>
+  .anchors-gallery {
+    --ag-ink: #e9e1d4;
+    --ag-muted: #9a9287;
+    --ag-line: rgb(233 225 212 / 12%);
+    --ag-accent: #c7a36b;
+    /* Lighting changes need a calmer curve than the UI's snappy feedback ease. */
+    --ag-ease: cubic-bezier(.35, 0, .2, 1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1000;
+    color: var(--ag-ink);
+    font-family: var(--font-body);
+    outline: none;
+    isolation: isolate;
+  }
+
+  .anchors-gallery[hidden] { display: none; }
+
+  .anchors-gallery__backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 58% 52% at 36% 44%, rgb(255 214 160 / 7%), transparent 70%),
+      radial-gradient(ellipse 70% 60% at 74% 18%, rgb(84 96 120 / 6%), transparent 62%),
+      #060607;
+    opacity: 0;
+    transition: opacity 440ms var(--ag-ease);
+  }
+
+  .anchors-gallery__backdrop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 140px 30px rgb(0 0 0 / 72%);
+    pointer-events: none;
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__backdrop {
+    opacity: 1;
+    transition: opacity 560ms var(--ag-ease);
+  }
+
+  /* The artwork's box is the cover's hovered image, not its frame. The window
+     starts clipped to the frame and expands to the full hovered image, so the
+     border appears to dissolve while the picture itself never moves. */
+  .anchors-gallery__art {
+    position: fixed;
+    left: var(--ag-art-full-x, 0px);
+    top: var(--ag-art-full-y, 0px);
+    width: var(--ag-art-full-w, 0px);
+    height: var(--ag-art-full-h, 0px);
+    z-index: 1;
+    margin: 0;
+    background: transparent;
+    box-shadow: 0 0 0 0 transparent;
+    transition: box-shadow 340ms var(--ag-ease);
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__art {
+    box-shadow:
+      0 34px 110px rgb(0 0 0 / 55%),
+      0 0 130px rgb(255 214 160 / 7%);
+    transition: box-shadow 700ms var(--ag-ease) 220ms;
+  }
+
+  .anchors-gallery__art-window {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    clip-path: var(--ag-clip-start, inset(0));
+    transition: clip-path 420ms var(--ag-ease);
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__art-window {
+    clip-path: inset(0 0 0 0 round 0);
+    transition: clip-path 760ms var(--ag-ease) 80ms;
+  }
+
+  .anchors-gallery .anchors-gallery__art-layer {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0;
+    filter: var(--ag-art-filter, none);
+    transition:
+      opacity 380ms var(--ag-ease),
+      filter 320ms var(--ag-ease);
+  }
+
+  .anchors-gallery__art-layer[data-gallery-main] { opacity: 1; }
+
+  /* The old frame hairline is kept at the original cover rect and dissolves
+     while the picture expands past it. */
+  .anchors-gallery__frame {
+    position: fixed;
+    left: var(--ag-art-x, 0px);
+    top: var(--ag-art-y, 0px);
+    width: var(--ag-art-w, 0px);
+    height: var(--ag-art-h, 0px);
+    z-index: 2;
+    border-top-left-radius: var(--ag-art-radius, .75rem);
+    border-top-right-radius: var(--ag-art-radius, .75rem);
+    box-shadow: inset 0 0 0 1px rgb(233 225 212 / 14%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__frame {
+    animation: anchors-frame-dissolve 760ms linear forwards;
+  }
+
+  @keyframes anchors-frame-dissolve {
+    0%, 15% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .anchors-gallery__chrome {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 260ms var(--ag-ease);
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__chrome {
+    opacity: 1;
+    transition: opacity 520ms var(--ag-ease) 320ms;
+  }
+
+  .anchors-gallery__close {
+    position: fixed;
+    top: clamp(18px, 3vw, 34px);
+    left: clamp(18px, 3vw, 34px);
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 2%);
+    color: var(--ag-muted);
+    font-family: var(--font-body);
+    font-size: .78rem;
+    letter-spacing: .12em;
+    cursor: pointer;
+    opacity: .55;
+    pointer-events: auto;
+    transition:
+      opacity 220ms var(--motion-ease),
+      color 220ms var(--motion-ease),
+      border-color 220ms var(--motion-ease),
+      background-color 220ms var(--motion-ease);
+  }
+
+  .anchors-gallery__close:hover,
+  .anchors-gallery__close:focus-visible {
+    opacity: 1;
+    color: var(--ag-ink);
+    border-color: var(--ag-line);
+    background: rgb(255 255 255 / 5%);
+  }
+
+  .anchors-gallery__info {
+    position: fixed;
+    left: var(--ag-art-x, 0px);
+    top: calc(var(--ag-art-y, 0px) + var(--ag-art-h, 0px) + 22px);
+    width: var(--ag-art-w, 0px);
+    max-height: calc(100vh - var(--ag-art-y, 0px) - var(--ag-art-h, 0px) - 46px);
+    max-height: calc(100dvh - var(--ag-art-y, 0px) - var(--ag-art-h, 0px) - 46px);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding-right: 4px;
+    pointer-events: auto;
+  }
+
+  .anchors-gallery[data-placement="above"] .anchors-gallery__info {
+    top: auto;
+    bottom: calc(100dvh - var(--ag-art-y, 0px) + 22px);
+    max-height: calc(var(--ag-art-y, 0px) - 44px);
+    flex-direction: column-reverse;
+  }
+
+  .anchors-gallery__caption {
+    display: grid;
+    gap: 8px;
+    padding-left: 2px;
+  }
+
+  .anchors-gallery__count {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: .66rem;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    color: var(--ag-accent);
+  }
+
+  .anchors-gallery__title {
+    margin: 0;
+    font-size: clamp(1.35rem, 2.2vw, 1.9rem);
+    font-weight: 400;
+    letter-spacing: .04em;
+    color: var(--ag-ink);
+  }
+
+  .anchors-gallery__note {
+    max-width: 40ch;
+    margin: 0;
+    font-size: .9rem;
+    line-height: 1.75;
+    color: var(--ag-muted);
+  }
+
+  .anchors-gallery__meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 22px 32px;
+  }
+
+  .anchors-gallery__player {
+    flex: 1 1 250px;
+    min-width: 210px;
+    max-width: 330px;
+    display: grid;
+    gap: 10px;
+    padding: 14px 0 0 20px;
+    border-left: 1px solid var(--ag-line);
+  }
+
+  .anchors-gallery__label {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--ag-muted);
+  }
+
+  .anchors-gallery__track {
+    margin: 0;
+    font-size: 1.02rem;
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--ag-ink);
+  }
+
+  .anchors-gallery__controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 2px;
+  }
+
+  .anchors-gallery__play {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid var(--ag-line);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 3%);
+    color: var(--ag-ink);
+    cursor: pointer;
+    transition:
+      border-color 220ms var(--motion-ease),
+      background-color 220ms var(--motion-ease);
+  }
+
+  .anchors-gallery__play:hover,
+  .anchors-gallery__play:focus-visible {
+    border-color: var(--ag-accent);
+    background: rgb(199 163 107 / 10%);
+  }
+
+  .anchors-gallery__icon {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+  }
+
+  .anchors-gallery__icon--pause { display: none; }
+  .anchors-gallery__player[data-playing] .anchors-gallery__icon--play { display: none; }
+  .anchors-gallery__player[data-playing] .anchors-gallery__icon--pause { display: block; }
+
+  .anchors-gallery__time {
+    display: flex;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: .66rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ag-muted);
+  }
+
+  .anchors-gallery__progress {
+    --ag-progress: 0%;
+    width: 100%;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .anchors-gallery__progress::-webkit-slider-runnable-track {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      var(--ag-accent) var(--ag-progress),
+      rgb(233 225 212 / 18%) var(--ag-progress)
+    );
+  }
+
+  .anchors-gallery__progress::-webkit-slider-thumb {
+    width: 9px;
+    height: 9px;
+    margin-top: -4px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ag-ink);
+    box-shadow: 0 0 10px rgb(199 163 107 / 45%);
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .anchors-gallery__progress::-moz-range-track {
+    height: 1px;
+    background: rgb(233 225 212 / 18%);
+  }
+
+  .anchors-gallery__progress::-moz-range-progress {
+    height: 1px;
+    background: var(--ag-accent);
+  }
+
+  .anchors-gallery__progress::-moz-range-thumb {
+    width: 9px;
+    height: 9px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ag-ink);
+    box-shadow: 0 0 10px rgb(199 163 107 / 45%);
+  }
+
+  .anchors-gallery__hint {
+    margin: 2px 0 0;
+    font-size: .7rem;
+    line-height: 1.5;
+    color: var(--ag-muted);
+    opacity: .75;
+  }
+
+  .anchors-gallery__wall {
+    flex: 1 1 300px;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    padding-top: 2px;
+  }
+
+  .anchors-gallery__thumb {
+    position: relative;
+    width: 88px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ag-ink);
+    text-align: left;
+    cursor: pointer;
+    opacity: .62;
+    filter: saturate(.85) brightness(.9);
+    transition:
+      opacity 240ms var(--motion-ease),
+      filter 300ms var(--motion-ease),
+      scale 300ms var(--motion-ease);
+  }
+
+  .anchors-gallery__thumb:nth-child(1) { transform: translateY(-6px) rotate(-1.2deg); }
+  .anchors-gallery__thumb:nth-child(2) {
+    width: 104px;
+    transform: translateY(6px) rotate(.8deg);
+  }
+  .anchors-gallery__thumb:nth-child(3) {
+    width: 92px;
+    transform: translateY(-2px) rotate(-.4deg);
+  }
+
+  .anchors-gallery__thumb img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border: 1px solid var(--ag-line);
+    box-shadow: 0 18px 40px rgb(0 0 0 / 35%);
+    transition:
+      border-color 300ms var(--motion-ease),
+      filter 300ms var(--motion-ease);
+  }
+
+  .anchors-gallery__thumb:hover,
+  .anchors-gallery__thumb:focus-visible {
+    opacity: 1;
+    filter: none;
+    scale: 1.03;
+  }
+
+  .anchors-gallery__thumb:hover img,
+  .anchors-gallery__thumb:focus-visible img {
+    border-color: color-mix(in srgb, var(--ag-accent) 55%, transparent);
+    filter: brightness(1.08);
+  }
+
+  .anchors-gallery__thumb-caption {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: .66rem;
+    line-height: 1.35;
+    color: var(--ag-muted);
+  }
+
+  .anchors-gallery__thumb-index {
+    font-family: var(--font-mono);
+    color: var(--ag-accent);
+  }
+
+  /* The cover becomes an invitation rather than a plain figure. */
+  .post-media--action {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+  }
+
+  .post-media__hint {
+    position: absolute;
+    left: clamp(12px, 2vw, 20px);
+    bottom: clamp(12px, 2vw, 20px);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 999px;
+    background: rgb(8 8 10 / 52%);
+    backdrop-filter: blur(10px);
+    color: #efe8da;
+    font-size: .76rem;
+    letter-spacing: .14em;
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    transition:
+      opacity 300ms var(--motion-ease),
+      transform 300ms var(--motion-ease);
+  }
+
+  .post-media__hint-arrow {
+    font-size: .8em;
+    opacity: .7;
+  }
+
+  .post-media--action:hover .post-media__hint,
+  .post-media--action:focus-visible .post-media__hint {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (hover: none) {
+    .post-media__hint { opacity: .82; transform: none; }
+  }
+
+  @media (max-width: 860px) {
+    .anchors-gallery__close {
+      top: 12px;
+      left: 12px;
+    }
+
+    .anchors-gallery__info {
+      max-height: calc(100vh - var(--ag-art-y, 0px) - var(--ag-art-h, 0px) - 44px);
+      max-height: calc(100dvh - var(--ag-art-y, 0px) - var(--ag-art-h, 0px) - 44px);
+      padding-right: 0;
+    }
+
+    .anchors-gallery__meta-row {
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .anchors-gallery__player {
+      flex: 0 0 auto;
+      min-width: 0;
+      max-width: none;
+      padding: 14px 0 0;
+      border-left: 0;
+      border-top: 1px solid var(--ag-line);
+    }
+
+    .anchors-gallery__wall {
+      flex: 0 0 auto;
+      flex-wrap: nowrap;
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+    }
+
+    .anchors-gallery__wall::-webkit-scrollbar { display: none; }
+
+    .anchors-gallery__thumb {
+      flex: 0 0 42%;
+      width: 42%;
+    }
+
+    .anchors-gallery__thumb:nth-child(n) { transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .anchors-gallery__backdrop,
+    .anchors-gallery__chrome,
+    .anchors-gallery__art,
+    .anchors-gallery__art-window,
+    .anchors-gallery__art-layer {
+      transition-duration: .01ms;
+      transition-delay: 0ms;
+    }
+
+    .anchors-gallery__frame { animation-duration: .01ms; }
+
+    /* No frame dissolve and no 1.5% reveal: keep the artwork at its frame crop. */
+    .anchors-gallery.is-open .anchors-gallery__art-window {
+      clip-path: var(--ag-clip-start, inset(0));
+    }
+  }
+</style>
