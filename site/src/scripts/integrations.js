@@ -150,6 +150,24 @@ export async function initPlayer(signal) {
   }
 }
 
+// The header player lives outside the page root and survives navigation, so a
+// fullscreen room cannot reach its <audio> element through the DOM. Hold it
+// while the room is open and restore the previous playback state on exit.
+export function holdSitePlayer() {
+  if (!player?.audio) return () => {};
+  const wasPlaying = !player.audio.paused;
+  if (wasPlaying) {
+    try { player.pause(); } catch {}
+  }
+  return (resume = true) => {
+    if (!wasPlaying || !resume) return;
+    try {
+      const attempt = player.play();
+      attempt?.catch?.(() => {});
+    } catch {}
+  };
+}
+
 export async function initImages(root, signal) {
   const images = [...root.querySelectorAll('[data-zoomable]')];
   if (!images.length) return;

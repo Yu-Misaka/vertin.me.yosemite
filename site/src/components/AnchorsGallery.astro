@@ -1,0 +1,773 @@
+---
+import { imageMetadata } from '../utils/image-metadata.mjs';
+
+interface GalleryItem {
+  image: string;
+  audio: string;
+  track: string;
+  title: string;
+  note?: string;
+}
+
+interface Props {
+  items: GalleryItem[];
+}
+
+const { items } = Astro.props;
+
+// Works hang along one long, dark wall rather than in a viewport-shaped list.
+// The first one sits at the origin: entering the room starts from the cover,
+// so the others are placed relative to it. Keeping the wall flat matters — a
+// work above or below the cover would show up in the entry frame whenever the
+// page happens to be scrolled. The gaps widen to the right so the wall reads as
+// receding into the dark.
+const slots = [
+  { cx: 0, cy: 0, h: 640 },
+  { cx: 2000, cy: -70, h: 700 },
+  { cx: 3900, cy: 60, h: 620 },
+  { cx: 5600, cy: -30, h: 660 }
+];
+
+const exhibits = await Promise.all(items.map(async (item, index) => {
+  const meta = await imageMetadata(item.image);
+  const slot = slots[index] ?? {
+    cx: 5600 + (index - 3) * 1750,
+    cy: index % 2 ? 60 : -70,
+    h: 620
+  };
+  const height = slot.h;
+  const width = meta.width && meta.height ? Math.round(height * meta.width / meta.height) : height;
+  const rect = {
+    x: Math.round(slot.cx - width / 2),
+    y: Math.round(slot.cy - height / 2),
+    w: width,
+    h: height
+  };
+  // Light arrives from the cover outwards, not all at once.
+  const distance = Math.hypot(slot.cx, slot.cy);
+  return {
+    ...item,
+    imageWidth: meta.width ?? 0,
+    imageHeight: meta.height ?? 0,
+    rect,
+    delay: index === 0 ? 0 : Math.min(1400, Math.round(560 + distance / 6))
+  };
+}));
+
+const content = exhibits.reduce((box, item) => ({
+  x: Math.min(box.x, item.rect.x),
+  y: Math.min(box.y, item.rect.y),
+  right: Math.max(box.right, item.rect.x + item.rect.w),
+  bottom: Math.max(box.bottom, item.rect.y + item.rect.h)
+}), { x: Infinity, y: Infinity, right: -Infinity, bottom: -Infinity });
+const room = { x: content.x, y: content.y, w: content.right - content.x, h: content.bottom - content.y };
+
+const payload = {
+  content: room,
+  works: exhibits.map(item => ({
+    image: item.image,
+    audio: item.audio,
+    track: item.track,
+    title: item.title,
+    note: item.note ?? '',
+    rect: item.rect
+  }))
+};
+const pad = (value: number) => String(value).padStart(2, '0');
+---
+
+<div
+  class="anchors-gallery"
+  data-anchors-gallery
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="anchors-gallery-title"
+  tabindex="-1"
+  hidden
+>
+  <div class="anchors-gallery__backdrop" aria-hidden="true"></div>
+  <canvas class="anchors-gallery__sky" data-gallery-sky aria-hidden="true"></canvas>
+
+  <div class="anchors-gallery__viewport" data-gallery-viewport>
+    <div class="anchors-gallery__world" data-gallery-world>
+      {exhibits.map((item, index) => (
+        <button
+          type="button"
+          class="anchors-gallery__work"
+          data-gallery-work
+          data-index={index}
+          style={`--ag-x:${item.rect.x}px;--ag-y:${item.rect.y}px;--ag-w:${item.rect.w}px;--ag-h:${item.rect.h}px;--ag-in:${item.delay}ms`}
+          aria-label={`第 ${index + 1} 件，共 ${exhibits.length} 件：《${item.title}》。点击走到它面前`}
+        >
+          <span class="anchors-gallery__pool" aria-hidden="true"></span>
+          <img
+            src={item.image}
+            alt=""
+            width={item.imageWidth}
+            height={item.imageHeight}
+            decoding="async"
+            draggable="false"
+          />
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div class="anchors-gallery__chrome" data-gallery-chrome>
+    <button type="button" class="anchors-gallery__close" data-gallery-close aria-label="离开展厅">
+      <span aria-hidden="true">←</span>
+      <span>离开展厅</span>
+    </button>
+
+    <nav class="anchors-gallery__index" aria-label="展品索引">
+      {exhibits.map((item, index) => (
+        <button
+          type="button"
+          class="anchors-gallery__index-item"
+          data-gallery-index
+          data-index={index}
+          aria-label={`前往第 ${index + 1} 件：《${item.title}》`}
+        >
+          {pad(index + 1)}
+        </button>
+      ))}
+    </nav>
+
+    <p class="anchors-gallery__hint" data-gallery-hint aria-hidden="true"></p>
+  </div>
+
+  <aside class="anchors-gallery__placard" data-gallery-placard>
+    <div class="anchors-gallery__caption">
+      <h2 class="anchors-gallery__title" id="anchors-gallery-title" data-gallery-title></h2>
+      <p class="anchors-gallery__note" data-gallery-note></p>
+    </div>
+
+    <div class="anchors-gallery__player" data-gallery-player>
+      <div class="anchors-gallery__controls">
+        <button type="button" class="anchors-gallery__play" data-gallery-play aria-label="播放">
+          <svg class="anchors-gallery__icon anchors-gallery__icon--play" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5.5v13l11-6.5z" />
+          </svg>
+          <svg class="anchors-gallery__icon anchors-gallery__icon--pause" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5.5h3v13H8zM13 5.5h3v13h-3z" />
+          </svg>
+        </button>
+        <div class="anchors-gallery__time" aria-hidden="true">
+          <span data-gallery-current>0:00</span>
+          <span class="anchors-gallery__time-sep">/</span>
+          <span data-gallery-duration>0:00</span>
+        </div>
+      </div>
+      <p class="anchors-gallery__track" data-gallery-track></p>
+      <input
+        class="anchors-gallery__progress"
+        type="range"
+        min="0"
+        max="1000"
+        step="1"
+        value="0"
+        aria-label="播放进度"
+        data-gallery-progress
+      />
+    </div>
+  </aside>
+
+  <p class="anchors-gallery__status" data-gallery-status role="status" aria-live="polite"></p>
+  <script type="application/json" data-gallery-data set:html={JSON.stringify(payload)} />
+  <audio data-gallery-audio preload="none"></audio>
+</div>
+
+<style is:global>
+  /* Animate the aperture itself so its feather follows the dissolving edge. */
+  @property --ag-top { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-right { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-bottom { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-left { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-radius { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-feather { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
+  .post-media[data-anchors-paint-held] img {
+    transform: var(--ag-page-transform, none);
+    filter: var(--ag-page-filter, none);
+    transition: none;
+  }
+
+  /* The reserved scrollbar gutter sits outside the room's fixed box, so it is
+     painted with the page background. Darken it with the room, or a 12px strip
+     of the site shows along the edge of the dark. */
+  html.anchors-gallery-open {
+    background-color: #050506;
+  }
+
+  .anchors-gallery {
+    --ag-ink: #e9e1d4;
+    --ag-muted: #8e867b;
+    --ag-line: rgb(233 225 212 / 12%);
+    --ag-accent: #c7a36b;
+    /* Lighting needs a calmer curve than the UI's snappy feedback ease. */
+    --ag-ease: cubic-bezier(.35, 0, .2, 1);
+    /* Lights go out quickly and then keep falling: the eye adapts last. */
+    --ag-dark: cubic-bezier(.12, .62, .24, 1);
+    /* `scrollbar-gutter: stable` on <html> keeps a 12px strip outside the
+       layout viewport, so the room asks for the full viewport width. */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1200;
+    overflow: hidden;
+    color: var(--ag-ink);
+    font-family: var(--font-body);
+    outline: none;
+    isolation: isolate;
+    cursor: grab;
+    touch-action: none;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .anchors-gallery[hidden] { display: none; }
+
+  .anchors-gallery[data-dragging] { cursor: grabbing; }
+
+  .anchors-gallery__backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 90% 70% at 50% 42%, #09090b, #050506 72%),
+      #050506;
+    opacity: 0;
+    transition: opacity 460ms var(--ag-ease);
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__backdrop {
+    opacity: 1;
+    transition: opacity 640ms var(--ag-dark);
+  }
+
+  /* The night sits behind everything but the dark: sparse, still, and slower
+     than the camera, which is what makes the works feel near. */
+  .anchors-gallery__sky {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transform-origin: 50% 50%;
+    transition: opacity 1200ms var(--ag-ease);
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__sky { opacity: 1; }
+
+  .anchors-gallery__viewport {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  /* One transform moves the room. Works keep their world rects forever, so a
+     work never changes size or position relative to its neighbours. */
+  .anchors-gallery__world {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+
+  .anchors-gallery__work {
+    position: absolute;
+    left: var(--ag-x);
+    top: var(--ag-y);
+    width: var(--ag-w);
+    height: var(--ag-h);
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    opacity: 0;
+    filter: brightness(.7);
+    transition-property: opacity, filter;
+    transition-duration: 1100ms, 900ms;
+    transition-timing-function: var(--ag-ease);
+  }
+
+  /* The room appears around the work the visitor is already standing at. */
+  .anchors-gallery.is-open .anchors-gallery__work {
+    opacity: .4;
+    transition-delay: var(--ag-in, 0ms);
+  }
+
+  /* Two works can be lit at once: the one being looked at, and the one that was
+     chosen to listen to. */
+  .anchors-gallery.is-open .anchors-gallery__work[data-lit],
+  .anchors-gallery.is-open .anchors-gallery__work[data-active] {
+    opacity: 1;
+    filter: none;
+  }
+
+  /* The inherited painting is already present, before the lights go out. Its
+     own filter carries the exact page brightness; no second dimming layer. */
+  .anchors-gallery__work[data-arrived] {
+    opacity: 1;
+    filter: none;
+    transition: none;
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__work:not([data-lit]):not([data-active]):hover {
+    opacity: .72;
+    filter: brightness(.9);
+  }
+
+  .anchors-gallery .anchors-gallery__work img {
+    --ag-top: var(--ag-entry-top, 0px);
+    --ag-right: var(--ag-entry-right, 0px);
+    --ag-bottom: var(--ag-entry-bottom, 0px);
+    --ag-left: var(--ag-entry-left, 0px);
+    --ag-radius: var(--ag-entry-radius, 0px);
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: var(--ag-entry-filter, none);
+    -webkit-user-drag: none;
+    clip-path: inset(var(--ag-top) var(--ag-right) var(--ag-bottom) var(--ag-left) round var(--ag-radius) var(--ag-radius) 0 0);
+    transition:
+      --ag-top 780ms var(--ag-ease) 60ms,
+      --ag-right 780ms var(--ag-ease) 60ms,
+      --ag-bottom 780ms var(--ag-ease) 60ms,
+      --ag-left 780ms var(--ag-ease) 60ms,
+      --ag-radius 780ms var(--ag-ease) 60ms,
+      filter 780ms var(--ag-ease) 60ms;
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__work img {
+    --ag-top: 0px;
+    --ag-right: 0px;
+    --ag-bottom: 0px;
+    --ag-left: 0px;
+    --ag-radius: 0px;
+    filter: none;
+  }
+
+  .anchors-gallery__work[data-arrived] img {
+    mask-image:
+      linear-gradient(to right,
+        transparent var(--ag-left),
+        #000 calc(var(--ag-left) + var(--ag-feather)),
+        #000 calc(100% - var(--ag-right) - var(--ag-feather)),
+        transparent calc(100% - var(--ag-right))),
+      linear-gradient(to bottom,
+        transparent var(--ag-top),
+        #000 calc(var(--ag-top) + var(--ag-feather)),
+        #000 calc(100% - var(--ag-bottom) - var(--ag-feather)),
+        transparent calc(100% - var(--ag-bottom)));
+    mask-composite: intersect;
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__work[data-arrived] img {
+    animation: ag-boundary-dissolve 780ms var(--ag-ease) 60ms;
+  }
+
+  @keyframes ag-boundary-dissolve {
+    0%, 100% { --ag-feather: 0px; }
+    28% { --ag-feather: var(--ag-entry-feather, 10px); }
+  }
+
+  /* Cancelling entry fades the aperture where it is, without opening it in a
+     single frame while the room leaves. */
+  .anchors-gallery__work[data-entry-frozen] img {
+    clip-path: var(--ag-exit-clip);
+    mask-image: var(--ag-exit-mask);
+    mask-composite: intersect;
+    filter: var(--ag-exit-filter);
+    transition: none;
+    animation: none;
+  }
+
+  /* Light spills from each work onto the wall around it, so a work reads as a
+     lit object rather than a floating rectangle. */
+  .anchors-gallery__pool {
+    position: absolute;
+    inset: -16% -14%;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      closest-side,
+      rgb(255 224 184 / 15%),
+      rgb(255 224 184 / 4%) 58%,
+      transparent 78%
+    );
+    opacity: 0;
+    transition: opacity 1200ms var(--ag-ease);
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__pool {
+    opacity: 1;
+    transition-delay: calc(var(--ag-in, 0ms) + 160ms);
+  }
+
+  .anchors-gallery__work:not([data-lit]):not([data-active]) .anchors-gallery__pool { opacity: .3; }
+
+  .anchors-gallery__chrome {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 240ms var(--ag-ease);
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__chrome {
+    opacity: 1;
+    transition: opacity 620ms var(--ag-ease) 1500ms;
+  }
+
+  .anchors-gallery__close {
+    position: absolute;
+    top: clamp(18px, 3vw, 34px);
+    left: clamp(18px, 3vw, 34px);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 2%);
+    color: var(--ag-muted);
+    font-family: var(--font-body);
+    font-size: .78rem;
+    letter-spacing: .12em;
+    cursor: pointer;
+    opacity: .5;
+    pointer-events: auto;
+    transition:
+      opacity 220ms var(--motion-ease),
+      color 220ms var(--motion-ease),
+      border-color 220ms var(--motion-ease),
+      background-color 220ms var(--motion-ease);
+  }
+
+  .anchors-gallery__close:hover,
+  .anchors-gallery__close:focus-visible {
+    opacity: 1;
+    color: var(--ag-ink);
+    border-color: var(--ag-line);
+    background: rgb(255 255 255 / 5%);
+  }
+
+  .anchors-gallery__index {
+    position: absolute;
+    left: clamp(18px, 3vw, 34px);
+    bottom: clamp(18px, 3vw, 30px);
+    display: flex;
+    gap: 2px;
+    pointer-events: auto;
+  }
+
+  .anchors-gallery__index-item {
+    padding: 6px 8px;
+    border: 0;
+    background: none;
+    color: var(--ag-muted);
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    letter-spacing: .18em;
+    line-height: 1;
+    cursor: pointer;
+    opacity: .4;
+    transition: opacity 220ms var(--motion-ease), color 220ms var(--motion-ease);
+  }
+
+  .anchors-gallery__index-item:hover,
+  .anchors-gallery__index-item:focus-visible { opacity: .9; color: var(--ag-ink); }
+
+  .anchors-gallery__index-item[aria-current="true"] {
+    color: var(--ag-ink);
+    opacity: 1;
+    box-shadow: 0 1px 0 0 rgb(233 225 212 / 35%);
+  }
+
+  .anchors-gallery__hint {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(18px, 3vw, 30px);
+    margin: 0;
+    transform: translateX(-50%);
+    font-size: .68rem;
+    letter-spacing: .1em;
+    color: var(--ag-muted);
+    opacity: 0;
+    transition: opacity 700ms var(--ag-ease);
+    white-space: nowrap;
+  }
+
+  .anchors-gallery__hint[data-visible] { opacity: .55; }
+
+  /* The placard is a wall label plus an audio guide: it belongs to one work,
+     so it follows that work and leaves when the work leaves the view. */
+  .anchors-gallery__placard {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    width: clamp(196px, 19vw, 272px);
+    display: grid;
+    gap: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transform-origin: 0 0;
+    will-change: transform;
+    transition: opacity 380ms var(--ag-ease);
+  }
+
+  .anchors-gallery__placard[data-visible] {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 760ms var(--ag-ease);
+  }
+
+  .anchors-gallery__caption {
+    display: grid;
+    gap: 7px;
+  }
+
+  .anchors-gallery__title {
+    margin: 0;
+    font-size: clamp(1.12rem, 1.5vw, 1.42rem);
+    font-weight: 400;
+    letter-spacing: .04em;
+    line-height: 1.3;
+    color: var(--ag-ink);
+  }
+
+  .anchors-gallery__title::before {
+    content: none;
+  }
+
+  .anchors-gallery__note {
+    margin: 0;
+    font-size: .82rem;
+    line-height: 1.7;
+    color: var(--ag-muted);
+  }
+
+  .anchors-gallery__note:empty { display: none; }
+
+  .anchors-gallery__player {
+    display: grid;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--ag-line);
+  }
+
+  .anchors-gallery__controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .anchors-gallery__play {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--ag-line);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 3%);
+    color: var(--ag-ink);
+    cursor: pointer;
+    transition:
+      border-color 220ms var(--motion-ease),
+      background-color 220ms var(--motion-ease);
+  }
+
+  .anchors-gallery__play:hover,
+  .anchors-gallery__play:focus-visible {
+    border-color: var(--ag-accent);
+    background: rgb(199 163 107 / 10%);
+  }
+
+  .anchors-gallery__icon {
+    width: 13px;
+    height: 13px;
+    fill: currentColor;
+  }
+
+  .anchors-gallery__icon--pause { display: none; }
+  .anchors-gallery__player[data-playing] .anchors-gallery__icon--play { display: none; }
+  .anchors-gallery__player[data-playing] .anchors-gallery__icon--pause { display: block; }
+
+  .anchors-gallery__time {
+    display: flex;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: .64rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ag-muted);
+  }
+
+  .anchors-gallery__track {
+    margin: 0;
+    font-size: .86rem;
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--ag-muted);
+  }
+
+  .anchors-gallery__progress {
+    --ag-progress: 0%;
+    width: 100%;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .anchors-gallery__progress::-webkit-slider-runnable-track {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      var(--ag-accent) var(--ag-progress),
+      rgb(233 225 212 / 18%) var(--ag-progress)
+    );
+  }
+
+  .anchors-gallery__progress::-webkit-slider-thumb {
+    width: 8px;
+    height: 8px;
+    margin-top: -3.5px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ag-ink);
+    box-shadow: 0 0 10px rgb(199 163 107 / 45%);
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .anchors-gallery__progress::-moz-range-track {
+    height: 1px;
+    background: rgb(233 225 212 / 18%);
+  }
+
+  .anchors-gallery__progress::-moz-range-progress {
+    height: 1px;
+    background: var(--ag-accent);
+  }
+
+  .anchors-gallery__progress::-moz-range-thumb {
+    width: 8px;
+    height: 8px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ag-ink);
+    box-shadow: 0 0 10px rgb(199 163 107 / 45%);
+  }
+
+  .anchors-gallery__status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* The cover becomes an invitation rather than a plain figure. */
+  .post-media--action {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+  }
+
+  .post-media__hint {
+    position: absolute;
+    left: clamp(12px, 2vw, 20px);
+    bottom: clamp(12px, 2vw, 20px);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 999px;
+    background: rgb(8 8 10 / 52%);
+    backdrop-filter: blur(10px);
+    color: #efe8da;
+    font-size: .76rem;
+    letter-spacing: .14em;
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    transition:
+      opacity 300ms var(--motion-ease),
+      transform 300ms var(--motion-ease);
+  }
+
+  .post-media__hint-arrow {
+    font-size: .8em;
+    opacity: .7;
+  }
+
+  .post-media--action:hover .post-media__hint,
+  .post-media--action:focus-visible .post-media__hint {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (hover: none) {
+    .post-media__hint { opacity: .82; transform: none; }
+  }
+
+  @media (max-width: 860px) {
+    .anchors-gallery__close {
+      top: 12px;
+      left: 12px;
+    }
+
+    .anchors-gallery__index {
+      left: 12px;
+      bottom: 14px;
+    }
+
+    .anchors-gallery__hint { display: none; }
+
+    .anchors-gallery__placard {
+      width: min(76vw, 300px);
+      gap: 12px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .anchors-gallery__backdrop,
+    .anchors-gallery__chrome,
+    .anchors-gallery__placard,
+    .anchors-gallery__work,
+    .anchors-gallery__pool,
+    .anchors-gallery__work img,
+    .anchors-gallery__hint {
+      transition-duration: .01ms;
+      transition-delay: 0ms;
+    }
+  }
+</style>

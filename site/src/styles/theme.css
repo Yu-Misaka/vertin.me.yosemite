@@ -64,7 +64,7 @@
 
 /* 列表封面像展柜：默认压暗，悬停时亮灯 */
 @media (hover: hover) and (pointer: fine) {
-	[data-theme="dark"] .post--index:not(.post--single):hover .post-media img {
+	[data-theme="dark"] .post--index:not(.post--single):hover .post-media:not([data-anchors-paint-held]) img {
 		filter: none;
 	}
 }

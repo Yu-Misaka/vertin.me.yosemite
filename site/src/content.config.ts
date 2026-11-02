@@ -23,7 +23,16 @@ const pages = defineCollection({
     description: z.string().optional(),
     date: z.date().optional(),
     cover: z.string().optional(),
-    order: z.number().optional()
+    order: z.number().optional(),
+    // Exhibits for the anchors gallery. Each image carries its own track, so
+    // switching the main image also switches the music.
+    gallery: z.array(z.object({
+      image: z.string(),
+      audio: z.string(),
+      track: z.string(),
+      title: z.string(),
+      note: z.string().optional()
+    })).optional()
   })
 });
 
