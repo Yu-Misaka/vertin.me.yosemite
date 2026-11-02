@@ -253,24 +253,6 @@ const pad = (value: number) => String(value).padStart(2, '0');
     inset: 0;
     z-index: 1;
     overflow: hidden;
-    /* A work on its way out of frame dissolves into the dark instead of being
-       cut flush against the screen edge. Narrow screens get a shorter fade so
-       a work that nearly fills the frame is never dimmed by it. */
-    --ag-edge: clamp(16px, 4vw, 64px);
-    -webkit-mask-image: linear-gradient(
-      to right,
-      rgb(0 0 0 / 0) 0,
-      rgb(0 0 0 / 1) var(--ag-edge),
-      rgb(0 0 0 / 1) calc(100% - var(--ag-edge)),
-      rgb(0 0 0 / 0) 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      rgb(0 0 0 / 0) 0,
-      rgb(0 0 0 / 1) var(--ag-edge),
-      rgb(0 0 0 / 1) calc(100% - var(--ag-edge)),
-      rgb(0 0 0 / 0) 100%
-    );
   }
 
   /* One transform moves the room. Works keep their world rects forever, so a
