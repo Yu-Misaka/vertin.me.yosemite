@@ -165,8 +165,8 @@ test('it steps to the other side rather than onto a neighbouring work', () => {
 test('it drops below when both sides are taken', () => {
   const rect = { x: 300, y: 100, w: 300, h: 200 };
   const obstacles = [
-    { x: 610, y: 60, w: 300, h: 300 },
-    { x: 0, y: 60, w: 290, h: 300 }
+    { x: 610, y: 60, w: 300, h: 280 },
+    { x: 0, y: 60, w: 290, h: 200 }
   ];
   const placed = labelPlacement({ size: labelSize, rect, obstacles, viewport: bigViewport });
   assert.equal(placed.y, 330);
@@ -265,4 +265,31 @@ test('with no room even for the smallest label, nothing is placed', () => {
   const viewport = { width: 520, height: 420 };
   const rect = { x: 8, y: 60, w: 504, h: 300 };
   assert.equal(largestLabel({ size, rect, viewport, min: 0.6, max: 1 }), null);
+});
+
+test('the label keeps a gap from the painting next door', () => {
+  // Two works with a 400px gap: a full-size label left of the second one would
+  // stop 8px short of the first, which is exactly the "pasted on" look.
+  const left = { x: 0, y: 100, w: 600, h: 400 };
+  const right = { x: 1000, y: 100, w: 600, h: 400 };
+  const size = { w: 362, h: 200 };
+  const placed = labelPlacement({
+    size,
+    rect: right,
+    obstacles: [left],
+    viewport: { width: 1600, height: 800 }
+  });
+  assert.ok(placed, 'there is room below');
+  assert.notEqual(placed.x, right.x - 30 - size.w, 'it did not butt against the left work');
+  const box = { x: placed.x, y: placed.y, w: size.w, h: size.h };
+  const clearance = 24;
+  const inflated = {
+    x: left.x - clearance,
+    y: left.y - clearance,
+    w: left.w + clearance * 2,
+    h: left.h + clearance * 2
+  };
+  const touches = box.x < inflated.x + inflated.w && box.x + box.w > inflated.x &&
+    box.y < inflated.y + inflated.h && box.y + box.h > inflated.y;
+  assert.equal(touches, false);
 });

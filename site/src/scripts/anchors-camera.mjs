@@ -128,8 +128,14 @@ function overlapArea(a, b) {
   return w > 0 && h > 0 ? w * h : 0;
 }
 
-/** True when a label of this size could stand on this side without covering anything. */
-export function labelFits(side, { size, rect, obstacles = [], viewport, safe = 18, gap = 30 }) {
+/**
+ * True when a label of this size could stand on this side: fully on screen and
+ * `clearance` away from everything else. A label that merely touches a painting
+ * reads as pasted onto it, so obstacles are judged with a margin.
+ */
+export function labelFits(side, {
+  size, rect, obstacles = [], viewport, safe = 18, gap = 30, clearance = 24
+}) {
   const box = labelBox(side, size.w, size.h, rect, gap);
   const safeBox = {
     x: safe,
@@ -139,7 +145,12 @@ export function labelFits(side, { size, rect, obstacles = [], viewport, safe = 1
   };
   const inside = overlapArea(box, safeBox) >= size.w * size.h - 1e-6;
   if (!inside) return false;
-  return !obstacles.some(obstacle => overlapArea(box, obstacle) > 1e-6);
+  return !obstacles.some(obstacle => overlapArea(box, {
+    x: obstacle.x - clearance,
+    y: obstacle.y - clearance,
+    w: obstacle.w + clearance * 2,
+    h: obstacle.h + clearance * 2
+  }) > 1e-6);
 }
 
 /**
@@ -148,9 +159,9 @@ export function labelFits(side, { size, rect, obstacles = [], viewport, safe = 1
  * filling the frame — there is no label rather than a label on the art.
  * Returns null when nothing fits.
  */
-export function labelPlacement({ size, rect, obstacles = [], viewport, safe = 18, gap = 30 }) {
+export function labelPlacement({ size, rect, obstacles = [], viewport, safe = 18, gap = 30, clearance = 24 }) {
   for (const side of LABEL_SIDES) {
-    if (labelFits(side, { size, rect, obstacles, viewport, safe, gap })) {
+    if (labelFits(side, { size, rect, obstacles, viewport, safe, gap, clearance })) {
       return labelBox(side, size.w, size.h, rect, gap);
     }
   }
@@ -163,9 +174,12 @@ export function labelPlacement({ size, rect, obstacles = [], viewport, safe = 18
  * closes in rather than in visible steps. Returns null when even `min` has
  * nowhere to stand.
  */
-export function largestLabel({ size, rect, obstacles = [], viewport, min = 0.6, max = 1, safe = 18, gap = 30 }) {
+export function largestLabel({
+  size, rect, obstacles = [], viewport, min = 0.6, max = 1, safe = 18, gap = 30, clearance = 24
+}) {
   const scaled = scale => ({ w: size.w * scale, h: size.h * scale });
-  const fits = (side, scale) => labelFits(side, { size: scaled(scale), rect, obstacles, viewport, safe, gap });
+  const fits = (side, scale) =>
+    labelFits(side, { size: scaled(scale), rect, obstacles, viewport, safe, gap, clearance });
 
   for (const side of LABEL_SIDES) {
     if (!fits(side, min)) continue;
