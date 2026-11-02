@@ -11,6 +11,7 @@ import {
   visibleFraction,
   zoomAt
 } from './anchors-camera.mjs';
+import { createSky } from './anchors-sky.mjs';
 
 function formatTime(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
@@ -52,6 +53,7 @@ export function initAnchorsGallery(root, signal) {
   const indexButtons = [...overlay.querySelectorAll('[data-gallery-index]')];
   const works = [...overlay.querySelectorAll('[data-gallery-work]')];
   const audio = overlay.querySelector('[data-gallery-audio]');
+  const skyEl = overlay.querySelector('[data-gallery-sky]');
 
   let data = {};
   try {
@@ -92,6 +94,8 @@ export function initAnchorsGallery(root, signal) {
   let previousBodyOverflow = '';
   let shellWasInert = false;
   let releasePlayer = () => {};
+  const skyRef = { x: content.x + content.w / 2, y: content.y + content.h / 2 };
+  const sky = skyEl ? createSky(skyEl, { still: reducedMotion.matches }) : null;
   let pointer = null;
   let pinch = null;
   let velocity = { x: 0, y: 0 };
@@ -131,6 +135,15 @@ export function initAnchorsGallery(root, signal) {
     const scale = camera.scale;
     worldEl.style.transform =
       `translate3d(${(viewport.width / 2 - camera.x * scale).toFixed(2)}px, ${(viewport.height / 2 - camera.y * scale).toFixed(2)}px, 0) scale(${scale.toFixed(5)})`;
+    if (sky) {
+      // The night drifts at a fraction of the camera's speed, and zooms less:
+      // parallax is the only thing telling the eye how far away it is.
+      const driftX = (camera.x - skyRef.x) * scale * 0.035;
+      const driftY = (camera.y - skyRef.y) * scale * 0.035;
+      const breathe = 1 + (scale / viewScale - 1) * 0.02;
+      skyEl.style.transform =
+        `translate3d(${(-driftX).toFixed(1)}px, ${(-driftY).toFixed(1)}px, 0) scale(${breathe.toFixed(4)})`;
+    }
     if (!open) return;
     lightNearest();
     placePlacard();
@@ -171,6 +184,12 @@ export function initAnchorsGallery(root, signal) {
       y: Math.min(viewport.height - safe - h, Math.max(safe, rect.y + rect.h + gap))
     };
     placard.style.transform = `translate3d(${Math.round(chosen.x)}px, ${Math.round(chosen.y)}px, 0)`;
+  }
+
+  function layoutSky() {
+    if (!sky) return;
+    const pad = Math.max(120, Math.round(Math.min(viewport.width, viewport.height) * 0.16));
+    sky.layout(viewport, pad);
   }
 
   function schedule() {
@@ -368,6 +387,7 @@ export function initAnchorsGallery(root, signal) {
       work.style.removeProperty('transition-delay');
     });
 
+    layoutSky();
     apply();
     overlay.hidden = false;
     renderPlacard();
@@ -375,6 +395,7 @@ export function initAnchorsGallery(root, signal) {
     apply();
     void overlay.offsetWidth;
     overlay.classList.add('is-open');
+    sky?.play();
     overlay.focus({ preventScroll: true });
 
     releasePlayer = holdSitePlayer();
@@ -422,8 +443,16 @@ export function initAnchorsGallery(root, signal) {
     pointer = null;
     pinch = null;
     pointers.clear();
-    if (immediate) audio.pause();
-    else fadeAudio(0, 900, () => audio.pause());
+    if (immediate) {
+      audio.pause();
+      sky?.pause();
+    } else {
+      fadeAudio(0, 900, () => audio.pause());
+      // Let the canvas fade with the room before it is cleared.
+      setTimeout(() => {
+        if (!open) sky?.pause();
+      }, 540);
+    }
     releasePlayer(resumeGlobal);
     releasePlayer = () => {};
     overlay.classList.remove('is-open');
@@ -783,9 +812,16 @@ export function initAnchorsGallery(root, signal) {
   window.addEventListener('resize', () => {
     if (!open) return;
     measure();
+    layoutSky();
     renderPlacard();
     camera = clampCamera(camera, viewport, bounds);
     apply();
+  }, { signal });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!sky || !open) return;
+    if (document.hidden) sky.sleep();
+    else sky.wake();
   }, { signal });
 
   window.__anchorsGalleryPopState = onPopState;

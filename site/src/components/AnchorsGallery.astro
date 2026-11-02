@@ -86,6 +86,7 @@ const pad = (value: number) => String(value).padStart(2, '0');
   hidden
 >
   <div class="anchors-gallery__backdrop" aria-hidden="true"></div>
+  <canvas class="anchors-gallery__sky" data-gallery-sky aria-hidden="true"></canvas>
 
   <div class="anchors-gallery__viewport" data-gallery-viewport>
     <div class="anchors-gallery__world" data-gallery-world>
@@ -177,6 +178,13 @@ const pad = (value: number) => String(value).padStart(2, '0');
 </div>
 
 <style is:global>
+  /* The reserved scrollbar gutter sits outside the room's fixed box, so it is
+     painted with the page background. Darken it with the room, or a 12px strip
+     of the site shows along the edge of the dark. */
+  html.anchors-gallery-open {
+    background-color: #050506;
+  }
+
   .anchors-gallery {
     --ag-ink: #e9e1d4;
     --ag-muted: #8e867b;
@@ -186,8 +194,14 @@ const pad = (value: number) => String(value).padStart(2, '0');
     --ag-ease: cubic-bezier(.35, 0, .2, 1);
     /* Lights go out quickly and then keep falling: the eye adapts last. */
     --ag-dark: cubic-bezier(.12, .62, .24, 1);
+    /* `scrollbar-gutter: stable` on <html> keeps a 12px strip outside the
+       layout viewport, so the room asks for the full viewport width. */
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
     z-index: 1200;
     overflow: hidden;
     color: var(--ag-ink);
@@ -220,6 +234,19 @@ const pad = (value: number) => String(value).padStart(2, '0');
     opacity: 1;
     transition: opacity 640ms var(--ag-dark);
   }
+
+  /* The night sits behind everything but the dark: sparse, still, and slower
+     than the camera, which is what makes the works feel near. */
+  .anchors-gallery__sky {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transform-origin: 50% 50%;
+    transition: opacity 1200ms var(--ag-ease);
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__sky { opacity: 1; }
 
   .anchors-gallery__viewport {
     position: absolute;
