@@ -159,31 +159,49 @@ export function initAnchorsGallery(root, signal) {
     });
   }
 
+  // The label belongs to the work, so it steps back with it instead of staying
+  // a fixed panel over a shrinking room. The floor keeps it readable; anything
+  // further and the label would be lying about how far away the work is.
+  function placardScale() {
+    return Math.min(1, Math.max(0.68, camera.scale / viewScale));
+  }
+
   function placePlacard() {
     const rect = projectRect(camera, viewport, rects[active]);
-    const visible = entryDone && visibleFraction(camera, viewport, rects[active]) > 0.32;
+    const scale = placardScale();
+    const visible = entryDone && visibleFraction(camera, viewport, rects[active]) > 0.25;
     if (visible !== placardVisible) {
       placardVisible = visible;
       placard.toggleAttribute('data-visible', visible);
     }
 
-    const { w, h } = placardSize;
+    const w = placardSize.w * scale;
+    const h = placardSize.h * scale;
     const gap = 30;
     const safe = 18;
+    const neighbours = rects
+      .map((candidate, index) => (index === active || visibleFraction(camera, viewport, candidate) < 0.04
+        ? null
+        : projectRect(camera, viewport, candidate)))
+      .filter(Boolean);
+    const clear = box => !neighbours.some(other =>
+      box.x < other.x + other.w && box.x + w > other.x &&
+      box.y < other.y + other.h && box.y + h > other.y);
+    const fits = box =>
+      box.x >= safe && box.y >= safe &&
+      box.x + w <= viewport.width - safe && box.y + h <= viewport.height - safe;
     const options = [
       { x: rect.x + rect.w + gap, y: rect.y + rect.h - h },
       { x: rect.x - gap - w, y: rect.y + rect.h - h },
       { x: rect.x, y: rect.y + rect.h + gap },
       { x: rect.x, y: rect.y - gap - h }
     ];
-    const fits = box =>
-      box.x >= safe && box.y >= safe &&
-      box.x + w <= viewport.width - safe && box.y + h <= viewport.height - safe;
-    const chosen = options.find(fits) || {
+    const chosen = options.find(box => fits(box) && clear(box)) || options.find(fits) || {
       x: Math.min(viewport.width - safe - w, Math.max(safe, rect.x)),
       y: Math.min(viewport.height - safe - h, Math.max(safe, rect.y + rect.h + gap))
     };
-    placard.style.transform = `translate3d(${Math.round(chosen.x)}px, ${Math.round(chosen.y)}px, 0)`;
+    placard.style.transform =
+      `translate3d(${Math.round(chosen.x)}px, ${Math.round(chosen.y)}px, 0) scale(${scale.toFixed(3)})`;
   }
 
   function layoutSky() {
@@ -318,17 +336,31 @@ export function initAnchorsGallery(root, signal) {
     else begin();
   }
 
-  function centerTo(index, { focus = false } = {}) {
+  // Choosing a work changes what is playing and where the label sits — and
+  // nothing else. Moving the camera is a separate, explicit request (`walkTo`),
+  // because being carried across the room is exactly what breaks the feeling of
+  // standing in it.
+  function selectWork(index, { focus = false } = {}) {
     if (!open || !rects[index]) return;
     const changed = index !== active;
     active = index;
+    works.forEach((work, position) => {
+      if (position === index) work.setAttribute('data-active', '');
+      else work.removeAttribute('data-active');
+    });
     renderPlacard();
     renderIndex();
+    placePlacard();
     if (changed) {
       setTrack();
       announce();
     }
+    if (focus) works[index].focus({ preventScroll: true });
+  }
 
+  function walkTo(index, { focus = false } = {}) {
+    if (!open || !rects[index]) return;
+    selectWork(index);
     const lift = Math.min(64, Math.max(18, viewport.height * 0.05));
     const pose = centrePose(rects[index], viewScale, lift);
     const target = clampCamera(pose, viewport, bounds);
@@ -353,6 +385,7 @@ export function initAnchorsGallery(root, signal) {
     placardVisible = false;
     active = 0;
     lit = -1;
+    works[0].setAttribute('data-active', '');
     savedFocus = trigger;
     previousHtmlOverflow = document.documentElement.style.overflow;
     previousBodyOverflow = document.body.style.overflow;
@@ -461,6 +494,7 @@ export function initAnchorsGallery(root, signal) {
     hintEl?.removeAttribute('data-visible');
     works.forEach(work => {
       work.removeAttribute('data-lit');
+      work.removeAttribute('data-active');
       work.removeAttribute('data-arrived');
       work.style.removeProperty('--ag-crop');
       work.style.removeProperty('transition-delay');
@@ -565,7 +599,7 @@ export function initAnchorsGallery(root, signal) {
       const index = Number(key) - 1;
       if (index < items.length) {
         event.preventDefault();
-        centerTo(index, { focus: true });
+        walkTo(index, { focus: true });
       }
       return;
     }
@@ -686,7 +720,7 @@ export function initAnchorsGallery(root, signal) {
 
     if (tap && target) {
       const work = target.closest?.('[data-gallery-work]');
-      if (work) centerTo(Number(work.dataset.index));
+      if (work) selectWork(Number(work.dataset.index));
     } else if (pointer?.moved && !reducedMotion.matches && travel > 160) {
       inertia = { x: velocity.x, y: velocity.y, time: performance.now() };
       schedule();
@@ -775,13 +809,13 @@ export function initAnchorsGallery(root, signal) {
   playBtn.addEventListener('click', togglePlay, { signal });
   progressEl.addEventListener('input', seek, { signal });
   indexButtons.forEach(button => button.addEventListener('click', () => {
-    centerTo(Number(button.dataset.index));
+    walkTo(Number(button.dataset.index));
   }, { signal }));
   works.forEach((work, index) => {
     work.addEventListener('focus', () => {
       if (!open || !work.matches(':focus-visible')) return;
       if (index === active) return;
-      centerTo(index);
+      walkTo(index);
     }, { signal });
   });
 

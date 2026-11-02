@@ -292,7 +292,10 @@ const pad = (value: number) => String(value).padStart(2, '0');
     transition-delay: var(--ag-in, 0ms);
   }
 
-  .anchors-gallery.is-open .anchors-gallery__work[data-lit] {
+  /* Two works can be lit at once: the one being looked at, and the one that was
+     chosen to listen to. */
+  .anchors-gallery.is-open .anchors-gallery__work[data-lit],
+  .anchors-gallery.is-open .anchors-gallery__work[data-active] {
     opacity: 1;
     filter: none;
   }
@@ -302,7 +305,7 @@ const pad = (value: number) => String(value).padStart(2, '0');
     transition-duration: 0ms, 900ms;
   }
 
-  .anchors-gallery.is-open .anchors-gallery__work:not([data-lit]):hover {
+  .anchors-gallery.is-open .anchors-gallery__work:not([data-lit]):not([data-active]):hover {
     opacity: .72;
     filter: brightness(.9);
   }
@@ -342,7 +345,7 @@ const pad = (value: number) => String(value).padStart(2, '0');
     transition-delay: calc(var(--ag-in, 0ms) + 160ms);
   }
 
-  .anchors-gallery__work:not([data-lit]) .anchors-gallery__pool { opacity: .3; }
+  .anchors-gallery__work:not([data-lit]):not([data-active]) .anchors-gallery__pool { opacity: .3; }
 
   .anchors-gallery__chrome {
     position: fixed;
@@ -451,6 +454,7 @@ const pad = (value: number) => String(value).padStart(2, '0');
     gap: 14px;
     opacity: 0;
     pointer-events: none;
+    transform-origin: 0 0;
     will-change: transform;
     transition: opacity 380ms var(--ag-ease);
   }
