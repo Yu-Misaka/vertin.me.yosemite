@@ -2,6 +2,7 @@ import { holdSitePlayer } from './integrations.js';
 import {
   boundsForPose,
   centrePose,
+  labelPlacement,
   clampCamera,
   fitScale,
   litWork,
@@ -48,6 +49,7 @@ export function initAnchorsGallery(root, signal) {
   const durationEl = overlay.querySelector('[data-gallery-duration]');
   const progressEl = overlay.querySelector('[data-gallery-progress]');
   const closeBtn = overlay.querySelector('[data-gallery-close]');
+  const indexEl = overlay.querySelector('.anchors-gallery__index');
   const hintEl = overlay.querySelector('[data-gallery-hint]');
   const statusEl = overlay.querySelector('[data-gallery-status]');
   const indexButtons = [...overlay.querySelectorAll('[data-gallery-index]')];
@@ -86,6 +88,7 @@ export function initAnchorsGallery(root, signal) {
   let inertia = null;
   let frame = 0;
   let placardSize = { w: 260, h: 180 };
+  let chromeBoxes = [];
   let placardVisible = false;
   let fadeToken = 0;
   let closingViaHistory = false;
@@ -166,6 +169,17 @@ export function initAnchorsGallery(root, signal) {
     return Math.min(1, Math.max(0.68, camera.scale / viewScale));
   }
 
+  // Chrome is small and fixed, so it is measured once per layout rather than
+  // every frame; the label must not end up on top of the way out.
+  function measureChrome() {
+    chromeBoxes = [closeBtn, indexEl]
+      .filter(Boolean)
+      .map(element => {
+        const box = element.getBoundingClientRect();
+        return { x: box.x - 6, y: box.y - 6, w: box.width + 12, h: box.height + 12 };
+      });
+  }
+
   function placePlacard() {
     const rect = projectRect(camera, viewport, rects[active]);
     const scale = placardScale();
@@ -175,33 +189,20 @@ export function initAnchorsGallery(root, signal) {
       placard.toggleAttribute('data-visible', visible);
     }
 
-    const w = placardSize.w * scale;
-    const h = placardSize.h * scale;
-    const gap = 30;
-    const safe = 18;
-    const neighbours = rects
-      .map((candidate, index) => (index === active || visibleFraction(camera, viewport, candidate) < 0.04
-        ? null
-        : projectRect(camera, viewport, candidate)))
-      .filter(Boolean);
-    const clear = box => !neighbours.some(other =>
-      box.x < other.x + other.w && box.x + w > other.x &&
-      box.y < other.y + other.h && box.y + h > other.y);
-    const fits = box =>
-      box.x >= safe && box.y >= safe &&
-      box.x + w <= viewport.width - safe && box.y + h <= viewport.height - safe;
-    const options = [
-      { x: rect.x + rect.w + gap, y: rect.y + rect.h - h },
-      { x: rect.x - gap - w, y: rect.y + rect.h - h },
-      { x: rect.x, y: rect.y + rect.h + gap },
-      { x: rect.x, y: rect.y - gap - h }
-    ];
-    const chosen = options.find(box => fits(box) && clear(box)) || options.find(fits) || {
-      x: Math.min(viewport.width - safe - w, Math.max(safe, rect.x)),
-      y: Math.min(viewport.height - safe - h, Math.max(safe, rect.y + rect.h + gap))
-    };
+    const obstacles = chromeBoxes.slice();
+    for (let index = 0; index < rects.length; index += 1) {
+      if (visibleFraction(camera, viewport, rects[index]) < 0.03) continue;
+      obstacles.push(projectRect(camera, viewport, rects[index]));
+    }
+
+    const placed = labelPlacement({
+      size: { w: placardSize.w * scale, h: placardSize.h * scale },
+      rect,
+      obstacles,
+      viewport
+    });
     placard.style.transform =
-      `translate3d(${Math.round(chosen.x)}px, ${Math.round(chosen.y)}px, 0) scale(${scale.toFixed(3)})`;
+      `translate3d(${Math.round(placed.x)}px, ${Math.round(placed.y)}px, 0) scale(${scale.toFixed(3)})`;
   }
 
   function layoutSky() {
@@ -425,6 +426,7 @@ export function initAnchorsGallery(root, signal) {
     overlay.hidden = false;
     renderPlacard();
     renderIndex();
+    measureChrome();
     apply();
     void overlay.offsetWidth;
     overlay.classList.add('is-open');
@@ -848,6 +850,7 @@ export function initAnchorsGallery(root, signal) {
     measure();
     layoutSky();
     renderPlacard();
+    measureChrome();
     camera = clampCamera(camera, viewport, bounds);
     apply();
   }, { signal });

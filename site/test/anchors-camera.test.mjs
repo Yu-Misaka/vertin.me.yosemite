@@ -5,6 +5,7 @@ import {
   boundsForPose,
   centrePose,
   fitScale,
+  labelPlacement,
   litWork,
   poseForRect,
   projectRect,
@@ -141,4 +142,80 @@ test('the entry pose is never clamped away from the cover', () => {
   assert.deepEqual(clampCamera(pose, { width: 834, height: 1112 }, bounds), pose);
   assert.ok(bounds.y < content.y, 'bounds only ever grow');
   assert.ok(bounds.h > content.h);
+});
+
+const labelSize = { w: 200, h: 140 };
+const bigViewport = { width: 1000, height: 700 };
+
+test('the label stands beside the work, bottom aligned, when the wall is clear', () => {
+  const rect = { x: 100, y: 100, w: 400, h: 220 };
+  const placed = labelPlacement({ size: labelSize, rect, viewport: bigViewport });
+  assert.equal(placed.x, 530);
+  assert.equal(placed.y, 180);
+});
+
+test('it steps to the other side rather than onto a neighbouring work', () => {
+  const rect = { x: 300, y: 100, w: 300, h: 220 };
+  const neighbour = { x: 620, y: 80, w: 300, h: 260 };
+  const placed = labelPlacement({ size: labelSize, rect, obstacles: [neighbour], viewport: bigViewport });
+  assert.equal(placed.x, 70, 'left of the work, clear of the neighbour');
+});
+
+test('it drops below when both sides are taken', () => {
+  const rect = { x: 300, y: 100, w: 300, h: 200 };
+  const obstacles = [
+    { x: 610, y: 60, w: 300, h: 300 },
+    { x: 0, y: 60, w: 290, h: 300 }
+  ];
+  const placed = labelPlacement({ size: labelSize, rect, obstacles, viewport: bigViewport });
+  assert.equal(placed.y, 330);
+  assert.equal(placed.x, 300);
+});
+
+test('it keeps clear of the exit and the index', () => {
+  const rect = { x: 380, y: 120, w: 240, h: 180 };
+  const chrome = [
+    { x: 12, y: 12, w: 110, h: 44 },
+    { x: 12, y: 620, w: 180, h: 50 }
+  ];
+  const placed = labelPlacement({ size: labelSize, rect, obstacles: chrome, viewport: bigViewport });
+  const box = { x: placed.x, y: placed.y, w: labelSize.w, h: labelSize.h };
+  for (const obstacle of chrome) {
+    const overlap = box.x < obstacle.x + obstacle.w && box.x + box.w > obstacle.x &&
+      box.y < obstacle.y + obstacle.h && box.y + box.h > obstacle.y;
+    assert.equal(overlap, false);
+  }
+});
+
+test('a room too small for a label still keeps it on screen', () => {
+  const viewport = { width: 700, height: 500 };
+  const rect = { x: 0, y: 0, w: 700, h: 500 };
+  const placed = labelPlacement({ size: labelSize, rect, obstacles: [rect], viewport });
+  assert.ok(placed.x >= 0 && placed.x + labelSize.w <= viewport.width);
+  assert.ok(placed.y >= 0 && placed.y + labelSize.h <= viewport.height);
+});
+
+test('the label never covers a work when any clear spot exists', () => {
+  const viewports = [
+    { width: 1440, height: 900 },
+    { width: 1158, height: 726 },
+    { width: 1024, height: 768 },
+    { width: 900, height: 600 }
+  ];
+  const rects = [
+    { x: 200, y: 120, w: 300, h: 170 },
+    { x: 520, y: 200, w: 260, h: 150 },
+    { x: 120, y: 380, w: 420, h: 220 }
+  ];
+  for (const viewport of viewports) {
+    for (const rect of rects) {
+      const others = rects.filter(other => other !== rect);
+      const placed = labelPlacement({ size: labelSize, rect, obstacles: others, viewport });
+      const box = { x: placed.x, y: placed.y, w: labelSize.w, h: labelSize.h };
+      const covered = others.some(other =>
+        box.x < other.x + other.w && box.x + box.w > other.x &&
+        box.y < other.y + other.h && box.y + box.h > other.y);
+      assert.equal(covered, false, `covered a work at ${viewport.width}x${viewport.height}`);
+    }
+  }
 });

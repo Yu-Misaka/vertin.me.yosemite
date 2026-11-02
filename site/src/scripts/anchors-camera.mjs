@@ -112,6 +112,51 @@ export function tweenPose(from, to, t) {
   };
 }
 
+/**
+ * Where a wall label can stand: beside the work it belongs to, and never on top
+ * of another one. Candidates are tried in order and scored by how much of the
+ * label would fall outside the safe area or onto something else, so a small
+ * window degrades to a corner rather than covering the art.
+ */
+export function labelPlacement({ size, rect, obstacles = [], viewport, safe = 18, gap = 30 }) {
+  const width = size.w;
+  const height = size.h;
+  const area = (a, b) => {
+    const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+    const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+    return w > 0 && h > 0 ? w * h : 0;
+  };
+  const safeBox = {
+    x: safe,
+    y: safe,
+    w: Math.max(0, viewport.width - safe * 2),
+    h: Math.max(0, viewport.height - safe * 2)
+  };
+  const candidates = [
+    { x: rect.x + rect.w + gap, y: rect.y + rect.h - height },
+    { x: rect.x - gap - width, y: rect.y + rect.h - height },
+    { x: rect.x, y: rect.y + rect.h + gap },
+    { x: rect.x, y: rect.y - gap - height },
+    { x: safe, y: viewport.height - safe - height },
+    { x: viewport.width - safe - width, y: viewport.height - safe - height }
+  ];
+
+  let best = candidates[0];
+  let bestCost = Infinity;
+  for (const candidate of candidates) {
+    const box = { x: candidate.x, y: candidate.y, w: width, h: height };
+    // Covering a work is worse than a label that has to sit closer to the edge.
+    const spill = width * height - area(box, safeBox);
+    const covered = obstacles.reduce((sum, obstacle) => sum + area(box, obstacle), 0);
+    const cost = spill * 2 + covered;
+    if (cost < bestCost - 1e-6) {
+      bestCost = cost;
+      best = candidate;
+    }
+  }
+  return { x: best.x, y: best.y, cost: bestCost };
+}
+
 /** Share of a work's own box that is on screen, 0 to 1. */
 export function visibleFraction(camera, viewport, rect) {
   const box = projectRect(camera, viewport, rect);
