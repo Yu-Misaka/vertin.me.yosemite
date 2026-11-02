@@ -95,6 +95,8 @@ export function initAnchorsGallery(root, signal) {
   let savedFocus = null;
   let previousHtmlOverflow = '';
   let previousBodyOverflow = '';
+  let previousBodyPadding = '';
+  let lockedScroll = 0;
   let shellWasInert = false;
   let releasePlayer = () => {};
   const skyRef = { x: content.x + content.w / 2, y: content.y + content.h / 2 };
@@ -398,10 +400,21 @@ export function initAnchorsGallery(root, signal) {
     lit = -1;
     works[0].setAttribute('data-active', '');
     savedFocus = trigger;
+    // Lock the page without letting it change width. `scrollbar-gutter` on the
+    // root already reserves the gutter here, but not every browser has it: when
+    // hiding the overflow reclaims that space, the page is padded by the
+    // difference so the cover behind the room does not jump sideways.
     previousHtmlOverflow = document.documentElement.style.overflow;
     previousBodyOverflow = document.body.style.overflow;
+    previousBodyPadding = document.body.style.paddingRight;
+    lockedScroll = window.scrollY;
+    const gutterBefore = window.innerWidth - document.documentElement.clientWidth;
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+    const gutterAfter = window.innerWidth - document.documentElement.clientWidth;
+    if (gutterAfter < gutterBefore) {
+      document.body.style.paddingRight = `${gutterBefore - gutterAfter}px`;
+    }
     document.documentElement.classList.add('anchors-gallery-open');
     if (shell) {
       shellWasInert = shell.inert;
@@ -518,6 +531,11 @@ export function initAnchorsGallery(root, signal) {
       worldEl.style.transform = '';
       document.documentElement.style.overflow = previousHtmlOverflow;
       document.body.style.overflow = previousBodyOverflow;
+      document.body.style.paddingRight = previousBodyPadding;
+      // Some browsers clamp the scroll offset when the page stops scrolling.
+      if (Math.abs(window.scrollY - lockedScroll) > 1) {
+        window.scrollTo({ top: lockedScroll, left: 0, behavior: 'instant' });
+      }
       document.documentElement.classList.remove('anchors-gallery-open');
       if (shell) shell.inert = shellWasInert;
       if (savedFocus?.isConnected) savedFocus.focus({ preventScroll: true });
