@@ -113,10 +113,10 @@ export function tweenPose(from, to, t) {
 }
 
 /**
- * Where a wall label can stand: beside the work it belongs to, and never on top
- * of another one. Candidates are tried in order and scored by how much of the
- * label would fall outside the safe area or onto something else, so a small
- * window degrades to a corner rather than covering the art.
+ * Where a wall label can stand. A real label lives beside its work, never on
+ * top of one; if the room has no such spot — a narrow window, or two works
+ * filling the frame — there is no label rather than a label on the art.
+ * Returns null when nothing fits.
  */
 export function labelPlacement({ size, rect, obstacles = [], viewport, safe = 18, gap = 30 }) {
   const width = size.w;
@@ -136,25 +136,16 @@ export function labelPlacement({ size, rect, obstacles = [], viewport, safe = 18
     { x: rect.x + rect.w + gap, y: rect.y + rect.h - height },
     { x: rect.x - gap - width, y: rect.y + rect.h - height },
     { x: rect.x, y: rect.y + rect.h + gap },
-    { x: rect.x, y: rect.y - gap - height },
-    { x: safe, y: viewport.height - safe - height },
-    { x: viewport.width - safe - width, y: viewport.height - safe - height }
+    { x: rect.x, y: rect.y - gap - height }
   ];
 
-  let best = candidates[0];
-  let bestCost = Infinity;
   for (const candidate of candidates) {
     const box = { x: candidate.x, y: candidate.y, w: width, h: height };
-    // Covering a work is worse than a label that has to sit closer to the edge.
-    const spill = width * height - area(box, safeBox);
-    const covered = obstacles.reduce((sum, obstacle) => sum + area(box, obstacle), 0);
-    const cost = spill * 2 + covered;
-    if (cost < bestCost - 1e-6) {
-      bestCost = cost;
-      best = candidate;
-    }
+    const inside = area(box, safeBox) >= width * height - 1e-6;
+    const covered = obstacles.some(obstacle => area(box, obstacle) > 1e-6);
+    if (inside && !covered) return { x: candidate.x, y: candidate.y };
   }
-  return { x: best.x, y: best.y, cost: bestCost };
+  return null;
 }
 
 /** Share of a work's own box that is on screen, 0 to 1. */

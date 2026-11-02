@@ -187,12 +187,15 @@ test('it keeps clear of the exit and the index', () => {
   }
 });
 
-test('a room too small for a label still keeps it on screen', () => {
+test('a room with no spot for a label gets no label', () => {
   const viewport = { width: 700, height: 500 };
   const rect = { x: 0, y: 0, w: 700, h: 500 };
-  const placed = labelPlacement({ size: labelSize, rect, obstacles: [rect], viewport });
-  assert.ok(placed.x >= 0 && placed.x + labelSize.w <= viewport.width);
-  assert.ok(placed.y >= 0 && placed.y + labelSize.h <= viewport.height);
+  assert.equal(labelPlacement({ size: labelSize, rect, obstacles: [rect], viewport }), null);
+
+  const tight = { width: 520, height: 420 };
+  const work = { x: 8, y: 60, w: 504, h: 300 };
+  assert.equal(labelPlacement({ size: labelSize, rect: work, viewport: tight }), null,
+    'both sides are off the screen and below has no room');
 });
 
 test('the label never covers a work when any clear spot exists', () => {
@@ -211,6 +214,7 @@ test('the label never covers a work when any clear spot exists', () => {
     for (const rect of rects) {
       const others = rects.filter(other => other !== rect);
       const placed = labelPlacement({ size: labelSize, rect, obstacles: others, viewport });
+      if (!placed) continue;
       const box = { x: placed.x, y: placed.y, w: labelSize.w, h: labelSize.h };
       const covered = others.some(other =>
         box.x < other.x + other.w && box.x + box.w > other.x &&

@@ -182,25 +182,42 @@ export function initAnchorsGallery(root, signal) {
 
   function placePlacard() {
     const rect = projectRect(camera, viewport, rects[active]);
-    const scale = placardScale();
-    const visible = entryDone && visibleFraction(camera, viewport, rects[active]) > 0.25;
-    if (visible !== placardVisible) {
-      placardVisible = visible;
-      placard.toggleAttribute('data-visible', visible);
-    }
-
+    const base = placardScale();
     const obstacles = chromeBoxes.slice();
     for (let index = 0; index < rects.length; index += 1) {
       if (visibleFraction(camera, viewport, rects[index]) < 0.03) continue;
       obstacles.push(projectRect(camera, viewport, rects[index]));
     }
 
-    const placed = labelPlacement({
-      size: { w: placardSize.w * scale, h: placardSize.h * scale },
-      rect,
-      obstacles,
-      viewport
-    });
+    // Step the label down until it fits somewhere beside the work. A small
+    // caption is better than none; standing on the art is never an option.
+    let scale = base;
+    let placed = null;
+    for (let candidate = base; candidate >= 0.6 - 1e-6; candidate -= 0.05) {
+      const spot = labelPlacement({
+        size: { w: placardSize.w * candidate, h: placardSize.h * candidate },
+        rect,
+        obstacles,
+        viewport
+      });
+      if (spot) {
+        placed = spot;
+        scale = candidate;
+        break;
+      }
+    }
+
+    // Nowhere to stand means no label: fading out is better than standing on
+    // the art, and the music keeps playing either way.
+    const visible = Boolean(placed) &&
+      entryDone &&
+      visibleFraction(camera, viewport, rects[active]) > 0.25;
+    if (visible !== placardVisible) {
+      placardVisible = visible;
+      placard.toggleAttribute('data-visible', visible);
+    }
+    if (!placed) return;
+
     placard.style.transform =
       `translate3d(${Math.round(placed.x)}px, ${Math.round(placed.y)}px, 0) scale(${scale.toFixed(3)})`;
   }
