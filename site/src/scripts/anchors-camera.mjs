@@ -112,6 +112,36 @@ export function tweenPose(from, to, t) {
   };
 }
 
+/** The sides a wall label is willing to stand on, in order of preference. */
+export const LABEL_SIDES = ['right', 'left', 'below', 'above'];
+
+function labelBox(side, width, height, rect, gap) {
+  if (side === 'right') return { x: rect.x + rect.w + gap, y: rect.y + rect.h - height, w: width, h: height };
+  if (side === 'left') return { x: rect.x - gap - width, y: rect.y + rect.h - height, w: width, h: height };
+  if (side === 'below') return { x: rect.x, y: rect.y + rect.h + gap, w: width, h: height };
+  return { x: rect.x, y: rect.y - gap - height, w: width, h: height };
+}
+
+function overlapArea(a, b) {
+  const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  return w > 0 && h > 0 ? w * h : 0;
+}
+
+/** True when a label of this size could stand on this side without covering anything. */
+export function labelFits(side, { size, rect, obstacles = [], viewport, safe = 18, gap = 30 }) {
+  const box = labelBox(side, size.w, size.h, rect, gap);
+  const safeBox = {
+    x: safe,
+    y: safe,
+    w: Math.max(0, viewport.width - safe * 2),
+    h: Math.max(0, viewport.height - safe * 2)
+  };
+  const inside = overlapArea(box, safeBox) >= size.w * size.h - 1e-6;
+  if (!inside) return false;
+  return !obstacles.some(obstacle => overlapArea(box, obstacle) > 1e-6);
+}
+
 /**
  * Where a wall label can stand. A real label lives beside its work, never on
  * top of one; if the room has no such spot — a narrow window, or two works
@@ -119,31 +149,37 @@ export function tweenPose(from, to, t) {
  * Returns null when nothing fits.
  */
 export function labelPlacement({ size, rect, obstacles = [], viewport, safe = 18, gap = 30 }) {
-  const width = size.w;
-  const height = size.h;
-  const area = (a, b) => {
-    const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
-    const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
-    return w > 0 && h > 0 ? w * h : 0;
-  };
-  const safeBox = {
-    x: safe,
-    y: safe,
-    w: Math.max(0, viewport.width - safe * 2),
-    h: Math.max(0, viewport.height - safe * 2)
-  };
-  const candidates = [
-    { x: rect.x + rect.w + gap, y: rect.y + rect.h - height },
-    { x: rect.x - gap - width, y: rect.y + rect.h - height },
-    { x: rect.x, y: rect.y + rect.h + gap },
-    { x: rect.x, y: rect.y - gap - height }
-  ];
+  for (const side of LABEL_SIDES) {
+    if (labelFits(side, { size, rect, obstacles, viewport, safe, gap })) {
+      return labelBox(side, size.w, size.h, rect, gap);
+    }
+  }
+  return null;
+}
 
-  for (const candidate of candidates) {
-    const box = { x: candidate.x, y: candidate.y, w: width, h: height };
-    const inside = area(box, safeBox) >= width * height - 1e-6;
-    const covered = obstacles.some(obstacle => area(box, obstacle) > 1e-6);
-    if (inside && !covered) return { x: candidate.x, y: candidate.y };
+/**
+ * The largest scale between `min` and `max` at which the label still stands
+ * clear, solved by bisection so the label shrinks continuously as the room
+ * closes in rather than in visible steps. Returns null when even `min` has
+ * nowhere to stand.
+ */
+export function largestLabel({ size, rect, obstacles = [], viewport, min = 0.6, max = 1, safe = 18, gap = 30 }) {
+  const scaled = scale => ({ w: size.w * scale, h: size.h * scale });
+  const fits = (side, scale) => labelFits(side, { size: scaled(scale), rect, obstacles, viewport, safe, gap });
+
+  for (const side of LABEL_SIDES) {
+    if (!fits(side, min)) continue;
+    if (fits(side, max)) {
+      return { ...labelBox(side, size.w * max, size.h * max, rect, gap), scale: max, side };
+    }
+    let low = min;
+    let high = max;
+    for (let step = 0; step < 9; step += 1) {
+      const middle = (low + high) / 2;
+      if (fits(side, middle)) low = middle;
+      else high = middle;
+    }
+    return { ...labelBox(side, size.w * low, size.h * low, rect, gap), scale: low, side };
   }
   return null;
 }

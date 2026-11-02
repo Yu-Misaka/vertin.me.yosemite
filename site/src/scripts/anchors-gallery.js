@@ -2,7 +2,7 @@ import { holdSitePlayer } from './integrations.js';
 import {
   boundsForPose,
   centrePose,
-  labelPlacement,
+  largestLabel,
   clampCamera,
   fitScale,
   litWork,
@@ -189,23 +189,16 @@ export function initAnchorsGallery(root, signal) {
       obstacles.push(projectRect(camera, viewport, rects[index]));
     }
 
-    // Step the label down until it fits somewhere beside the work. A small
-    // caption is better than none; standing on the art is never an option.
-    let scale = base;
-    let placed = null;
-    for (let candidate = base; candidate >= 0.6 - 1e-6; candidate -= 0.05) {
-      const spot = labelPlacement({
-        size: { w: placardSize.w * candidate, h: placardSize.h * candidate },
-        rect,
-        obstacles,
-        viewport
-      });
-      if (spot) {
-        placed = spot;
-        scale = candidate;
-        break;
-      }
-    }
+    // The label shrinks continuously as the wall closes in — the scale is
+    // solved, not stepped — and it never stands on a painting.
+    const placed = largestLabel({
+      size: placardSize,
+      rect,
+      obstacles,
+      viewport,
+      min: 0.6,
+      max: base
+    });
 
     // Nowhere to stand means no label: fading out is better than standing on
     // the art, and the music keeps playing either way.
@@ -219,7 +212,7 @@ export function initAnchorsGallery(root, signal) {
     if (!placed) return;
 
     placard.style.transform =
-      `translate3d(${Math.round(placed.x)}px, ${Math.round(placed.y)}px, 0) scale(${scale.toFixed(3)})`;
+      `translate3d(${Math.round(placed.x)}px, ${Math.round(placed.y)}px, 0) scale(${placed.scale.toFixed(4)})`;
   }
 
   function layoutSky() {

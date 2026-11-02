@@ -6,6 +6,7 @@ import {
   centrePose,
   fitScale,
   labelPlacement,
+  largestLabel,
   litWork,
   poseForRect,
   projectRect,
@@ -222,4 +223,46 @@ test('the label never covers a work when any clear spot exists', () => {
       assert.equal(covered, false, `covered a work at ${viewport.width}x${viewport.height}`);
     }
   }
+});
+
+test('the label shrinks continuously as the wall closes in', () => {
+  const work = { x: 0, y: 138, w: 798, h: 449 };
+  const size = { w: 220, h: 187 };
+  const scales = [];
+  for (let width = 1160; width <= 1360; width += 10) {
+    const rect = { ...work, x: (width - work.w) / 2 };
+    const placed = largestLabel({ size, rect, viewport: { width, height: 726 } });
+    assert.ok(placed, `no label at ${width}`);
+    scales.push(placed.scale);
+  }
+  for (let index = 1; index < scales.length; index += 1) {
+    assert.ok(scales[index] >= scales[index - 1] - 1e-9, 'a wider room never needs a smaller label');
+    assert.ok(scales[index] - scales[index - 1] < 0.06, 'no visible steps between widths');
+  }
+});
+
+test('the solved label never covers anything and never exceeds its bounds', () => {
+  const size = { w: 220, h: 187 };
+  const obstacles = [{ x: 900, y: 100, w: 300, h: 400 }];
+  for (let width = 1100; width <= 1500; width += 25) {
+    const rect = { x: width / 2 - 300, y: 150, w: 600, h: 340 };
+    const placed = largestLabel({ size, rect, obstacles, viewport: { width, height: 800 }, min: 0.6, max: 1 });
+    if (!placed) continue;
+    assert.ok(placed.scale >= 0.6 - 1e-9 && placed.scale <= 1 + 1e-9);
+    const box = { x: placed.x, y: placed.y, w: size.w * placed.scale, h: size.h * placed.scale };
+    for (const obstacle of obstacles) {
+      const overlap = box.x < obstacle.x + obstacle.w && box.x + box.w > obstacle.x &&
+        box.y < obstacle.y + obstacle.h && box.y + box.h > obstacle.y;
+      assert.equal(overlap, false);
+    }
+    assert.ok(box.x >= 18 - 1e-6 && box.y >= 18 - 1e-6);
+    assert.ok(box.x + box.w <= width - 18 + 1e-6);
+  }
+});
+
+test('with no room even for the smallest label, nothing is placed', () => {
+  const size = { w: 220, h: 187 };
+  const viewport = { width: 520, height: 420 };
+  const rect = { x: 8, y: 60, w: 504, h: 300 };
+  assert.equal(largestLabel({ size, rect, viewport, min: 0.6, max: 1 }), null);
 });
