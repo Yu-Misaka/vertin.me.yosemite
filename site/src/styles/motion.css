@@ -88,7 +88,7 @@ html[data-motion] { scroll-behavior: auto; }
   transition: transform var(--motion-cover-hover) var(--motion-cover-ease), filter var(--motion-color) ease;
 }
 @media (hover: hover) and (pointer: fine) {
-  .post--index:not(.post--single):hover .post-media:not([data-shared-cover]) img { transform: scale(1.015); }
+  .post--index:not(.post--single):hover .post-media:not([data-shared-cover]):not([data-anchors-paint-held]) img { transform: scale(1.015); }
 }
 /* Keep the clicked crop in both snapshots. Once the shared transition ends,
    the live image eases back to its destination's resting/hovered state. */

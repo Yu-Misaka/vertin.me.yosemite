@@ -178,6 +178,20 @@ const pad = (value: number) => String(value).padStart(2, '0');
 </div>
 
 <style is:global>
+  /* Animate the aperture itself so its feather follows the dissolving edge. */
+  @property --ag-top { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-right { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-bottom { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-left { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-radius { syntax: '<length>'; inherits: false; initial-value: 0px; }
+  @property --ag-feather { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
+  .post-media[data-anchors-paint-held] img {
+    transform: var(--ag-page-transform, none);
+    filter: var(--ag-page-filter, none);
+    transition: none;
+  }
+
   /* The reserved scrollbar gutter sits outside the room's fixed box, so it is
      painted with the page background. Darken it with the room, or a 12px strip
      of the site shows along the edge of the dark. */
@@ -300,9 +314,12 @@ const pad = (value: number) => String(value).padStart(2, '0');
     filter: none;
   }
 
-  /* The cover is already lit: it must not fade in with the rest of the room. */
-  .anchors-gallery.is-open .anchors-gallery__work[data-arrived] {
-    transition-duration: 0ms, 900ms;
+  /* The inherited painting is already present, before the lights go out. Its
+     own filter carries the exact page brightness; no second dimming layer. */
+  .anchors-gallery__work[data-arrived] {
+    opacity: 1;
+    filter: none;
+    transition: none;
   }
 
   .anchors-gallery.is-open .anchors-gallery__work:not([data-lit]):not([data-active]):hover {
@@ -310,18 +327,71 @@ const pad = (value: number) => String(value).padStart(2, '0');
     filter: brightness(.9);
   }
 
-  .anchors-gallery__work img {
+  .anchors-gallery .anchors-gallery__work img {
+    --ag-top: var(--ag-entry-top, 0px);
+    --ag-right: var(--ag-entry-right, 0px);
+    --ag-bottom: var(--ag-entry-bottom, 0px);
+    --ag-left: var(--ag-entry-left, 0px);
+    --ag-radius: var(--ag-entry-radius, 0px);
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    filter: var(--ag-entry-filter, none);
     -webkit-user-drag: none;
-    /* The page crops covers to a banner; opening the crop reveals the work. */
-    clip-path: inset(var(--ag-crop, 0px) 0);
-    transition: clip-path 780ms var(--ag-ease) 60ms;
+    clip-path: inset(var(--ag-top) var(--ag-right) var(--ag-bottom) var(--ag-left) round var(--ag-radius) var(--ag-radius) 0 0);
+    transition:
+      --ag-top 780ms var(--ag-ease) 60ms,
+      --ag-right 780ms var(--ag-ease) 60ms,
+      --ag-bottom 780ms var(--ag-ease) 60ms,
+      --ag-left 780ms var(--ag-ease) 60ms,
+      --ag-radius 780ms var(--ag-ease) 60ms,
+      filter 780ms var(--ag-ease) 60ms;
   }
 
-  .anchors-gallery.is-open .anchors-gallery__work img { clip-path: inset(0); }
+  .anchors-gallery.is-open .anchors-gallery__work img {
+    --ag-top: 0px;
+    --ag-right: 0px;
+    --ag-bottom: 0px;
+    --ag-left: 0px;
+    --ag-radius: 0px;
+    filter: none;
+  }
+
+  .anchors-gallery__work[data-arrived] img {
+    mask-image:
+      linear-gradient(to right,
+        transparent var(--ag-left),
+        #000 calc(var(--ag-left) + var(--ag-feather)),
+        #000 calc(100% - var(--ag-right) - var(--ag-feather)),
+        transparent calc(100% - var(--ag-right))),
+      linear-gradient(to bottom,
+        transparent var(--ag-top),
+        #000 calc(var(--ag-top) + var(--ag-feather)),
+        #000 calc(100% - var(--ag-bottom) - var(--ag-feather)),
+        transparent calc(100% - var(--ag-bottom)));
+    mask-composite: intersect;
+  }
+
+  .anchors-gallery.is-open .anchors-gallery__work[data-arrived] img {
+    animation: ag-boundary-dissolve 780ms var(--ag-ease) 60ms;
+  }
+
+  @keyframes ag-boundary-dissolve {
+    0%, 100% { --ag-feather: 0px; }
+    28% { --ag-feather: var(--ag-entry-feather, 10px); }
+  }
+
+  /* Cancelling entry fades the aperture where it is, without opening it in a
+     single frame while the room leaves. */
+  .anchors-gallery__work[data-entry-frozen] img {
+    clip-path: var(--ag-exit-clip);
+    mask-image: var(--ag-exit-mask);
+    mask-composite: intersect;
+    filter: var(--ag-exit-filter);
+    transition: none;
+    animation: none;
+  }
 
   /* Light spills from each work onto the wall around it, so a work reads as a
      lit object rather than a floating rectangle. */

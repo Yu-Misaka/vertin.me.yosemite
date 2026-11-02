@@ -38,6 +38,16 @@ export function poseForRect(rect, box, viewport, scale) {
   };
 }
 
+/** Insets in world units that show exactly the page frame within a work. */
+export function cropForFrame(projected, frame, scale) {
+  return {
+    top: Math.max(0, (frame.y - projected.y) / scale),
+    right: Math.max(0, (projected.x + projected.w - frame.x - frame.w) / scale),
+    bottom: Math.max(0, (projected.y + projected.h - frame.y - frame.h) / scale),
+    left: Math.max(0, (frame.x - projected.x) / scale)
+  };
+}
+
 /**
  * Pose that puts a work's centre at the viewport centre, lifted so the label
  * below it keeps breathing room. `lift` is in screen pixels.

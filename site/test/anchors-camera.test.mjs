@@ -4,6 +4,7 @@ import {
   clampCamera,
   boundsForPose,
   centrePose,
+  cropForFrame,
   fitScale,
   labelPlacement,
   largestLabel,
@@ -58,6 +59,43 @@ test('the entry pose keeps the cover exactly where the page drew it', () => {
   assert.ok(Math.abs(box.y + box.h / 2 - (frame.y + frame.h / 2)) < 1e-9);
   const crop = (box.h - frame.h) / 2;
   assert.ok(Math.abs(crop - (640 * 713 / 1138 - 350) / 2) < 1e-9, 'the crop that opens is the banner trim');
+});
+
+test('the entry aperture matches the page while retaining the current hover paint', () => {
+  const work = { x: -569, y: -320, w: 1138, h: 640 };
+  for (const width of [342, 713, 1100]) {
+    for (const hover of [1, 1.006, 1.015]) {
+      const frame = { x: 350, y: 50, w: width, h: width / 1.9 };
+      const paint = {
+        x: frame.x - width * (hover - 1) / 2,
+        y: frame.y - frame.h * (hover - 1) / 2,
+        w: width * hover,
+        h: frame.h * hover
+      };
+      const scale = paint.w / work.w;
+      const pose = poseForRect(work, paint, viewport, scale);
+      const projected = projectRect(pose, viewport, work);
+      const crop = cropForFrame(projected, frame, scale);
+      const aperture = {
+        x: projected.x + crop.left * scale,
+        y: projected.y + crop.top * scale,
+        w: projected.w - (crop.left + crop.right) * scale,
+        h: projected.h - (crop.top + crop.bottom) * scale
+      };
+      for (const key of ['x', 'y', 'w', 'h']) assert.ok(Math.abs(aperture[key] - frame[key]) < 1e-9);
+      assert.ok(Math.abs(projected.w - paint.w) < 1e-9, 'the paint never shrinks back to the unhovered frame');
+    }
+  }
+});
+
+test('an off-centre painted image keeps asymmetric frame insets', () => {
+  const projected = { x: 90, y: 20, w: 800, h: 450 };
+  const frame = { x: 108, y: 51, w: 760, h: 350 };
+  const crop = cropForFrame(projected, frame, 0.6);
+  assert.ok(Math.abs(projected.x + crop.left * 0.6 - frame.x) < 1e-9);
+  assert.ok(Math.abs(projected.y + crop.top * 0.6 - frame.y) < 1e-9);
+  assert.ok(Math.abs(projected.w - (crop.left + crop.right) * 0.6 - frame.w) < 1e-9);
+  assert.ok(Math.abs(projected.h - (crop.top + crop.bottom) * 0.6 - frame.h) < 1e-9);
 });
 
 test('centring lifts the work clear of the label', () => {

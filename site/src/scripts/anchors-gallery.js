@@ -1,7 +1,9 @@
 import { holdSitePlayer } from './integrations.js';
+import { lockPageScroll } from './scroll-lock.mjs';
 import {
   boundsForPose,
   centrePose,
+  cropForFrame,
   largestLabel,
   clampCamera,
   fitScale,
@@ -67,6 +69,8 @@ export function initAnchorsGallery(root, signal) {
   const content = data.content;
   if (!items.length || !content || works.length !== items.length) return;
   const rects = items.map(item => item.rect);
+  const coverImage = trigger.querySelector('img');
+  const entryProperties = ['top', 'right', 'bottom', 'left', 'radius', 'filter', 'feather'];
 
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const shell = document.querySelector('body > .wrapper');
@@ -93,8 +97,7 @@ export function initAnchorsGallery(root, signal) {
   let fadeToken = 0;
   let closingViaHistory = false;
   let savedFocus = null;
-  let previousHtmlOverflow = '';
-  let previousBodyOverflow = '';
+  let releaseScroll = null;
   let shellWasInert = false;
   let releasePlayer = () => {};
   const skyRef = { x: content.x + content.w / 2, y: content.y + content.h / 2 };
@@ -389,8 +392,31 @@ export function initAnchorsGallery(root, signal) {
     schedule();
   }
 
+  function releaseCoverPaint() {
+    trigger.removeAttribute('data-anchors-paint-held');
+    trigger.style.removeProperty('--ag-page-transform');
+    trigger.style.removeProperty('--ag-page-filter');
+  }
+
+  function clearEntryFreeze() {
+    works[0].removeAttribute('data-entry-frozen');
+    for (const name of ['clip', 'mask', 'filter']) works[0].style.removeProperty(`--ag-exit-${name}`);
+  }
+
   function openRoom() {
     if (open) return;
+    // Capture the painted image before inert removes :hover, including a hover
+    // that has only just started. The room inherits this paint, not the frame's
+    // unscaled dimensions.
+    const paint = coverImage.getBoundingClientRect();
+    const paintStyle = getComputedStyle(coverImage);
+    const paintFilter = paintStyle.filter;
+    const radius = parseFloat(getComputedStyle(trigger.closest('.post-inner')).borderTopLeftRadius) || 0;
+    overlay.hidden = true;
+    clearEntryFreeze();
+    trigger.style.setProperty('--ag-page-transform', paintStyle.transform);
+    trigger.style.setProperty('--ag-page-filter', paintFilter);
+    trigger.setAttribute('data-anchors-paint-held', '');
     open = true;
     entryDone = false;
     placardVisible = false;
@@ -398,34 +424,38 @@ export function initAnchorsGallery(root, signal) {
     lit = -1;
     works[0].setAttribute('data-active', '');
     savedFocus = trigger;
-    previousHtmlOverflow = document.documentElement.style.overflow;
-    previousBodyOverflow = document.body.style.overflow;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    document.documentElement.classList.add('anchors-gallery-open');
-    if (shell) {
-      shellWasInert = shell.inert;
-      shell.inert = true;
+    // A history-forward during the exit fade reuses the existing lock, keeping
+    // the original page styles and inert state for the eventual exit.
+    if (!releaseScroll) {
+      releaseScroll = lockPageScroll();
+      if (shell) shellWasInert = shell.inert;
     }
+    document.documentElement.classList.add('anchors-gallery-open');
+    if (shell) shell.inert = true;
 
     const box = measure();
+    const entryScale = paint.width / rects[0].w;
     camera = poseForRect(
       rects[0],
-      { x: box.left, y: box.top, w: box.width, h: box.height },
+      { x: paint.left, y: paint.top, w: paint.width, h: paint.height },
       viewport,
-      viewScale
+      entryScale
     );
-    targetScale = viewScale;
+    targetScale = entryScale;
     zoomAnchor = { x: viewport.width / 2, y: viewport.height / 2 };
     bounds = boundsForPose(content, camera, viewport);
 
-    // The page crops the cover to a banner. Opening that crop into the whole
-    // artwork is the first move of the room: same width, same centre, and the
-    // trim disappears instead of the picture jumping. It is written while the
-    // room is still hidden, so the crop has no transition of its own.
+    // The image keeps its painted size and centre. Its frame dissolves instead:
+    // four insets begin at the old aperture, then reveal the whole work. Insets
+    // are in world units because the camera will scale them once more.
     const projected = projectRect(camera, viewport, rects[0]);
-    const crop = Math.max(0, (projected.h - box.height) / 2);
-    works[0].style.setProperty('--ag-crop', `${crop.toFixed(2)}px`);
+    const crop = cropForFrame(projected, { x: box.left, y: box.top, w: box.width, h: box.height }, entryScale);
+    for (const [side, inset] of Object.entries(crop)) {
+      works[0].style.setProperty(`--ag-entry-${side}`, `${inset}px`);
+    }
+    works[0].style.setProperty('--ag-entry-radius', `${radius / entryScale}px`);
+    works[0].style.setProperty('--ag-entry-filter', paintFilter);
+    works[0].style.setProperty('--ag-entry-feather', `${Math.min(6, box.width * 0.012) / entryScale}px`);
     works[0].setAttribute('data-arrived', '');
     works.forEach(work => {
       work.style.removeProperty('transition-delay');
@@ -442,6 +472,9 @@ export function initAnchorsGallery(root, signal) {
     overlay.classList.add('is-open');
     sky?.play();
     overlay.focus({ preventScroll: true });
+
+    // The page can resume its own hover rules once it is fully behind the dark.
+    later(releaseCoverPaint, reducedMotion.matches ? 160 : 900);
 
     releasePlayer = holdSitePlayer();
 
@@ -488,6 +521,14 @@ export function initAnchorsGallery(root, signal) {
     pointer = null;
     pinch = null;
     pointers.clear();
+    releaseCoverPaint();
+    if (works[0].hasAttribute('data-arrived')) {
+      const imageStyle = getComputedStyle(works[0].querySelector('img'));
+      works[0].style.setProperty('--ag-exit-clip', imageStyle.clipPath);
+      works[0].style.setProperty('--ag-exit-mask', imageStyle.maskImage);
+      works[0].style.setProperty('--ag-exit-filter', imageStyle.filter);
+      works[0].setAttribute('data-entry-frozen', '');
+    }
     if (immediate) {
       audio.pause();
       sky?.pause();
@@ -508,16 +549,17 @@ export function initAnchorsGallery(root, signal) {
       work.removeAttribute('data-lit');
       work.removeAttribute('data-active');
       work.removeAttribute('data-arrived');
-      work.style.removeProperty('--ag-crop');
+      entryProperties.forEach(name => work.style.removeProperty(`--ag-entry-${name}`));
       work.style.removeProperty('transition-delay');
     });
 
     const finish = () => {
       if (open) return;
       overlay.hidden = true;
+      clearEntryFreeze();
       worldEl.style.transform = '';
-      document.documentElement.style.overflow = previousHtmlOverflow;
-      document.body.style.overflow = previousBodyOverflow;
+      releaseScroll?.();
+      releaseScroll = null;
       document.documentElement.classList.remove('anchors-gallery-open');
       if (shell) shell.inert = shellWasInert;
       if (savedFocus?.isConnected) savedFocus.focus({ preventScroll: true });
